@@ -4,16 +4,22 @@
 #include <math.h>
 #include "../lib_quadrature/lib_quadrature.h"
 #include "../lib_arr/lib_arr.h"
+#include "../lib_rng/lib_rng.h"
+#include "../lib_pots/lib_pot.h"
 #include "lib_flow.h"
 
 #define PI (3.1415926535897)
+#define DIM (6)
 
 double test_ph_phase_space(double dl, double kf, double fac, unsigned long nq, unsigned long nth,
 			   unsigned long nphi)
 {
+
 	double *gq1, *wq, *q, *phi, *wphi, *th, *wth, dl2, Is, Ith, Iq, sgn, th_max, vol_full, vol_cres,
 	    vol_int, I_exact, a, b, q0, q1, cos_th, sin_th, pf_q, q2, d;
 	unsigned long i, j, l;
+
+	fprintf(stderr, "test_ph_phase_space(dl=%.1f) %s:%d\n", dl, __FILE__, __LINE__);
 
 	gq1 = malloc(nq * sizeof(double));
 	assert(gq1);
@@ -95,5 +101,63 @@ double test_ph_phase_space(double dl, double kf, double fac, unsigned long nq, u
 	vol_cres = vol_full - vol_int;
 	I_exact = 2 * vol_cres;
 
+	free(wphi);
+	free(phi);
+	free(wth);
+	free(th);
+	free(wq);
+	free(q);
+	free(gq1);
+
 	return fabs(I_exact - Is);
+}
+
+double test_zs_contact(double kf, unsigned long ns, unsigned long nq, unsigned long nth, unsigned long nphi,
+		       int seed)
+{
+	double *ke, st[6], en[6], *zs, zs_exact, *zs_diff, max_fabs, fac, g;
+	unsigned long i;
+
+	fprintf(stderr, "test_zs_contact() %s:%d\n", __FILE__, __LINE__);
+
+	ke = malloc(ns * DIM * sizeof(double));
+	assert(ke);
+
+	zs_diff = malloc(ns * sizeof(double));
+	assert(zs_diff);
+
+	st[0] = 0;
+	en[0] = 3 * kf;
+	st[1] = 0;
+	en[1] = 3 * kf;
+	st[2] = 0;
+	en[2] = 3 * kf;
+	st[3] = 0;
+	en[3] = PI;
+	st[4] = 0;
+	en[4] = PI;
+	st[5] = 0;
+	en[5] = 2 * PI;
+
+	fill_ext_momenta6(ke, ns, st, en, seed);
+
+	fac = 0.96;
+
+	zs = zs_flow(ke, ns, DIM, kf, nq, nth, nphi, v_contact, 2, NULL, fac);
+	assert(zs);
+
+	g = 0.5;
+
+	for (i = 0; i < ns; i++) {
+		zs_exact = zs_contact(&ke[DIM * i], DIM, kf, g);
+		zs_diff[i] = fabs(zs_exact - zs[i]);
+	}
+
+	max_fabs = get_max_fabs(zs_diff, ns);
+
+	free(zs);
+	free(zs_diff);
+	free(ke);
+
+	return max_fabs;
 }
