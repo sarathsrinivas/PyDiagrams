@@ -15,7 +15,7 @@ double test_ph_phase_space(double dl, double kf, double fac, unsigned long nq, u
 			   unsigned long nphi)
 {
 
-	double *gq1, *wq, *q, *phi, *wphi, *th, *wth, dl2, Is, Ith, Iq, sgn, th_max, vol_full, vol_cres,
+	double *gq1, *wq1, *wq, *q, *phi, *wphi, *th, *wth, dl2, Is, Ith, Iq, sgn, th_max, vol_full, vol_cres,
 	    vol_int, I_exact, a, b, q0, q1, cos_th, sin_th, pf_q, q2, d;
 	unsigned long i, j, l;
 
@@ -23,6 +23,8 @@ double test_ph_phase_space(double dl, double kf, double fac, unsigned long nq, u
 
 	gq1 = malloc(nq * sizeof(double));
 	assert(gq1);
+	wq1 = malloc(nq * sizeof(double));
+	assert(wq1);
 
 	q = malloc(nq * sizeof(double));
 	assert(q);
@@ -39,7 +41,7 @@ double test_ph_phase_space(double dl, double kf, double fac, unsigned long nq, u
 	wphi = malloc(nphi * sizeof(double));
 	assert(wphi);
 
-	gauss_grid_create(nq, gq1, wq, -1, 1);
+	gauss_grid_create(nq, gq1, wq1, -1, 1);
 	gauss_grid_create(nphi, phi, wphi, 0, 2 * PI);
 
 	if (dl < kf) {
@@ -74,8 +76,7 @@ double test_ph_phase_space(double dl, double kf, double fac, unsigned long nq, u
 			q0 = sgn * (-a + b);
 			q1 = a + b;
 
-			gauss_grid_rescale(gq1, nq, q, q0, q1);
-			pf_q = 0.5 * (q1 - q0);
+			gauss_grid_rescale(gq1, wq1, nq, q, wq, q0, q1);
 
 			Iq = 0;
 			for (l = 0; l < nq; l++) {
@@ -83,7 +84,7 @@ double test_ph_phase_space(double dl, double kf, double fac, unsigned long nq, u
 				Iq += wq[l] * q2;
 			}
 
-			Ith += wth[j] * sin_th * Iq * pf_q;
+			Ith += wth[j] * sin_th * Iq;
 		}
 
 		Is += wphi[i] * Ith;
@@ -108,6 +109,7 @@ double test_ph_phase_space(double dl, double kf, double fac, unsigned long nq, u
 	free(wq);
 	free(q);
 	free(gq1);
+	free(wq1);
 
 	return fabs(I_exact - Is);
 }
@@ -117,11 +119,15 @@ double test_zs_contact(double kf, unsigned long ns, unsigned long nq, unsigned l
 {
 	double *ke, st[6], en[6], *zs, zs_exact, *zs_diff, max_fabs, fac, g;
 	unsigned long i;
+	int ret;
 
 	fprintf(stderr, "test_zs_contact() %s:%d\n", __FILE__, __LINE__);
 
 	ke = malloc(ns * DIM * sizeof(double));
 	assert(ke);
+
+	zs = malloc(ns * sizeof(double));
+	assert(zs);
 
 	zs_diff = malloc(ns * sizeof(double));
 	assert(zs_diff);
@@ -143,8 +149,7 @@ double test_zs_contact(double kf, unsigned long ns, unsigned long nq, unsigned l
 
 	fac = 0.96;
 
-	zs = zs_flow(ke, ns, DIM, kf, nq, nth, nphi, v_contact, 2, NULL, fac);
-	assert(zs);
+	ret = zs_flow(zs, ke, ns, DIM, kf, nq, nth, nphi, v_contact, NULL, fac);
 
 	g = 0.5;
 
