@@ -42,8 +42,8 @@ double zs_contact(const double *ke, unsigned int dim, double kf, double g)
 	return 2 * PI * zs_ct;
 }
 
-static void get_zs_loop_mom(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dlp,
-			    double q, double q_th, double q_phi)
+void get_zs_loop_mom(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dlp, double q,
+		     double q_th, double q_phi)
 {
 	double dl, dlp, P, dl_dlp, P_dl, P_dlp, P2, dlp2, dl2, cos_dl_dlp, cos_P_dl, cos_P_dlp, sin_dl_dlp,
 	    sin_P_dl, sin_P_dlp, Podl, Podlp, dlodlp, cos_th, sin_th, phi_P, Poq, dlpoq, dloq, dl_zs1,

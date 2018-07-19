@@ -166,3 +166,140 @@ double test_zs_contact(double kf, unsigned long ns, unsigned long nq, unsigned l
 
 	return max_fabs;
 }
+
+double test_get_zs_loop_mom(unsigned long ns, double kf, int seed)
+{
+	double *ke, st[6], en[6], dl, dlp, P, P_dl, P_dlp, dl_dlp, phi_dlp, q, th_q, phi_q, q_ct[3], dl_ct[3],
+	    dlp_ct[3], P_ct[3], kl1[6], kl2[6], dl_zs1_ct[3], dlp_zs1_ct[3], P_zs1_ct[3], dl_zs2_ct[3],
+	    dlp_zs2_ct[3], P_zs2_ct[3], dl_zs1_cmp, dlp_zs1_cmp, P_zs1_cmp, dl_zs2_cmp, dlp_zs2_cmp,
+	    P_zs2_cmp, P_dl_zs1_cmp, P_dlp_zs1_cmp, dl_dlp_zs1_cmp, P_dl_zs2_cmp, P_dlp_zs2_cmp,
+	    dl_dlp_zs2_cmp, diff;
+	unsigned long i;
+	dsfmt_t drng;
+
+	fprintf(stderr, "test_get_zs_loop_mom() %s:%d\n", __FILE__, __LINE__);
+
+	ke = malloc(ns * DIM * sizeof(double));
+	assert(ke);
+
+	st[0] = 0;
+	en[0] = 3 * kf;
+	st[1] = 0;
+	en[1] = 3 * kf;
+	st[2] = 0;
+	en[2] = 3 * kf;
+	st[3] = 0;
+	en[3] = PI;
+	st[4] = 0;
+	en[4] = PI;
+	st[5] = 0;
+	en[5] = 2 * PI;
+
+	fill_ext_momenta6(ke, ns, st, en, seed);
+
+	dsfmt_init_gen_rand(&drng, seed + 7);
+
+	q = dsfmt_genrand_close_open(&drng);
+	th_q = PI * dsfmt_genrand_close_open(&drng);
+	phi_q = 2 * PI * dsfmt_genrand_close_open(&drng);
+
+	q_ct[0] = q * cos(phi_q) * sin(th_q);
+	q_ct[1] = q * sin(phi_q) * sin(th_q);
+	q_ct[2] = q * cos(th_q);
+
+	diff = 0;
+
+	for (i = 0; i < ns; i++) {
+
+		dl = ke[i * DIM + 0];
+		dlp = ke[i * DIM + 1];
+		P = ke[i * DIM + 2];
+		dl_dlp = ke[i * DIM + 3];
+		P_dl = ke[i * DIM + 4];
+		P_dlp = ke[i * DIM + 5];
+
+		phi_dlp = acos((cos(P_dlp) - cos(P_dl) * cos(dl_dlp)) / (sin(P_dl) * sin(dl_dlp)));
+
+		get_zs_loop_mom(kl1, kl2, DIM, &ke[i * DIM], phi_dlp, q, th_q, phi_q);
+
+		dl_ct[0] = 0;
+		dl_ct[1] = 0;
+		dl_ct[2] = dl;
+
+		dlp_ct[0] = dlp * cos(phi_dlp) * sin(dl_dlp);
+		dlp_ct[1] = dlp * sin(phi_dlp) * sin(dl_dlp);
+		dlp_ct[2] = dlp * cos(dl_dlp);
+
+		P_ct[0] = P * cos(0) * sin(P_dl);
+		P_ct[1] = P * sin(0) * sin(P_dl);
+		P_ct[2] = P * cos(P_dl);
+
+		dlp_zs1_ct[0] = 0.5 * (P_ct[0] - q_ct[0] + dlp_ct[0]);
+		dlp_zs1_ct[1] = 0.5 * (P_ct[1] - q_ct[1] + dlp_ct[1]);
+		dlp_zs1_ct[2] = 0.5 * (P_ct[2] - q_ct[2] + dlp_ct[2]);
+
+		P_zs1_ct[0] = P_ct[0] + q_ct[0] + dlp_ct[0];
+		P_zs1_ct[1] = P_ct[1] + q_ct[1] + dlp_ct[1];
+		P_zs1_ct[2] = P_ct[2] + q_ct[2] + dlp_ct[2];
+
+		dlp_zs2_ct[0] = 0.5 * (-P_ct[0] + q_ct[0] + dlp_ct[0]);
+		dlp_zs2_ct[1] = 0.5 * (-P_ct[1] + q_ct[1] + dlp_ct[1]);
+		dlp_zs2_ct[2] = 0.5 * (-P_ct[2] + q_ct[2] + dlp_ct[2]);
+
+		P_zs2_ct[0] = P_ct[0] + q_ct[0] - dlp_ct[0];
+		P_zs2_ct[1] = P_ct[1] + q_ct[1] - dlp_ct[1];
+		P_zs2_ct[2] = P_ct[2] + q_ct[2] - dlp_ct[2];
+
+		dl_zs1_cmp = dl_ct[2];
+		dlp_zs1_cmp = sqrt(dlp_zs1_ct[0] * dlp_zs1_ct[0] + dlp_zs1_ct[1] * dlp_zs1_ct[1]
+				   + dlp_zs1_ct[2] * dlp_zs1_ct[2]);
+		P_zs1_cmp
+		    = sqrt(P_zs1_ct[0] * P_zs1_ct[0] + P_zs1_ct[1] * P_zs1_ct[1] + P_zs1_ct[2] * P_zs1_ct[2]);
+
+		dl_zs2_cmp = dl_ct[2];
+		dlp_zs2_cmp = sqrt(dlp_zs2_ct[0] * dlp_zs2_ct[0] + dlp_zs2_ct[1] * dlp_zs2_ct[1]
+				   + dlp_zs2_ct[2] * dlp_zs2_ct[2]);
+		P_zs2_cmp
+		    = sqrt(P_zs2_ct[0] * P_zs2_ct[0] + P_zs2_ct[1] * P_zs2_ct[1] + P_zs2_ct[2] * P_zs2_ct[2]);
+
+		dl_dlp_zs1_cmp
+		    = acos((dl_ct[0] * dlp_zs1_ct[0] + dl_ct[1] * dlp_zs1_ct[1] + dl_ct[2] * dlp_zs1_ct[2])
+			   / (dl * dlp_zs1_cmp));
+
+		P_dl_zs1_cmp = acos((dl_ct[0] * P_zs1_ct[0] + dl_ct[1] * P_zs1_ct[1] + dl_ct[2] * P_zs1_ct[2])
+				    / (dl * P_zs1_cmp));
+
+		P_dlp_zs1_cmp = acos(
+		    (dlp_zs1_ct[0] * P_zs1_ct[0] + dlp_zs1_ct[1] * P_zs1_ct[1] + dlp_zs1_ct[2] * P_zs1_ct[2])
+		    / (dlp_zs1_cmp * P_zs1_cmp));
+
+		dl_dlp_zs2_cmp
+		    = acos((dl_ct[0] * dlp_zs2_ct[0] + dl_ct[1] * dlp_zs2_ct[1] + dl_ct[2] * dlp_zs2_ct[2])
+			   / (dl * dlp_zs2_cmp));
+
+		P_dl_zs2_cmp = acos((dl_ct[0] * P_zs2_ct[0] + dl_ct[1] * P_zs2_ct[1] + dl_ct[2] * P_zs2_ct[2])
+				    / (dl * P_zs2_cmp));
+
+		P_dlp_zs2_cmp = acos(
+		    (dlp_zs2_ct[0] * P_zs2_ct[0] + dlp_zs2_ct[1] * P_zs2_ct[1] + dlp_zs2_ct[2] * P_zs2_ct[2])
+		    / (dlp_zs2_cmp * P_zs2_cmp));
+
+		diff += fabs(dl_zs1_cmp - kl1[0]);
+		diff += fabs(dlp_zs1_cmp - kl1[1]);
+		diff += fabs(P_zs1_cmp - kl1[2]);
+
+		diff += fabs(dl_zs2_cmp - kl2[0]);
+		diff += fabs(dlp_zs2_cmp - kl2[1]);
+		diff += fabs(P_zs2_cmp - kl2[2]);
+
+		diff += fabs(dl_dlp_zs1_cmp - kl1[3]);
+		diff += fabs(P_dl_zs1_cmp - kl1[4]);
+		diff += fabs(P_dlp_zs1_cmp - kl1[5]);
+
+		diff += fabs(dl_dlp_zs2_cmp - kl2[3]);
+		diff += fabs(P_dl_zs2_cmp - kl2[4]);
+		diff += fabs(P_dlp_zs2_cmp - kl2[5]);
+	}
+
+	return diff;
+}
