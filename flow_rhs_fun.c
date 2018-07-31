@@ -72,13 +72,107 @@ double zsp_contact(const double *ke, unsigned int dim, double kf, double g)
 	return 2 * PI * zsp_ct;
 }
 
+void get_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dlp,
+			double q, double th_q, double phi_q)
+{
+	double dl, dlp, P, dl_dlp, P_dl, P_dlp, P2, dlp2, dl2, cos_dl_dlp, cos_P_dl, cos_P_dlp, sin_dl_dlp,
+	    sin_P_dl, sin_P_dlp, Podl, Podlp, dlodlp, cos_th, sin_th, phi_P, Poq, dlpoq, dloq, dl_zs1,
+	    dlp_zs1, P_zs1, dl_dlp_zs1, P_dl_zs1, P_dlp_zs1, dl_zs2, dlp_zs2, P_zs2, dl_dlp_zs2, P_dl_zs2,
+	    P_dlp_zs2, cos_P_q, cos_dlp_q, q2, dl_ct[3], dlp_ct[3], P_ct[3], q_ct[3], dlp_zs1_ct[3],
+	    dlp_zs1_ct_mag, dlp_zs2_ct[3], P_zs1_ct[3], P_zs2_ct[3];
+	unsigned int i;
+
+	dl = ke[0];
+	dlp = ke[1];
+	P = ke[2];
+	dl_dlp = ke[3];
+	P_dl = ke[4];
+	P_dlp = ke[5];
+
+	q_ct[0] = q * cos(phi_q) * sin(th_q);
+	q_ct[1] = q * sin(phi_q) * sin(th_q);
+	q_ct[2] = q * cos(th_q);
+
+	dl_ct[0] = 0;
+	dl_ct[1] = 0;
+	dl_ct[2] = dl;
+
+	dlp_ct[0] = dlp * cos(phi_dlp) * sin(dl_dlp);
+	dlp_ct[1] = dlp * sin(phi_dlp) * sin(dl_dlp);
+	dlp_ct[2] = dlp * cos(dl_dlp);
+
+	P_ct[0] = P * cos(0) * sin(P_dl);
+	P_ct[1] = P * sin(0) * sin(P_dl);
+	P_ct[2] = P * cos(P_dl);
+
+	dl_zs1 = dl_ct[2];
+	dl_zs2 = dl_ct[2];
+
+	dlp_zs1 = 0;
+	P_zs1 = 0;
+	dlp_zs2 = 0;
+	P_zs2 = 0;
+	dl_dlp_zs1 = 0;
+	P_dl_zs1 = 0;
+	P_dlp_zs1 = 0;
+	dl_dlp_zs2 = 0;
+	P_dl_zs2 = 0;
+	P_dlp_zs2 = 0;
+
+	for (i = 0; i < 3; i++) {
+
+		dlp_zs1_ct[i] = 0.5 * (P_ct[i] - q_ct[i] + dlp_ct[i]);
+		P_zs1_ct[i] = P_ct[i] + q_ct[i] + dlp_ct[i];
+
+		dlp_zs2_ct[i] = 0.5 * (-P_ct[i] + q_ct[i] + dlp_ct[i]);
+		P_zs2_ct[i] = P_ct[i] + q_ct[i] - dlp_ct[i];
+	}
+
+	for (i = 0; i < 3; i++) {
+
+		dlp_zs1 += dlp_zs1_ct[i] * dlp_zs1_ct[i];
+		P_zs1 += P_zs1_ct[i] * P_zs1_ct[i];
+
+		dlp_zs2 += dlp_zs2_ct[i] * dlp_zs2_ct[i];
+		P_zs2 += P_zs2_ct[i] * P_zs2_ct[i];
+
+		dl_dlp_zs1 += dl_ct[i] * dlp_zs1_ct[i];
+		P_dl_zs1 += dl_ct[i] * P_zs1_ct[i];
+		P_dlp_zs1 += dlp_zs1_ct[i] * P_zs1_ct[i];
+
+		dl_dlp_zs2 += dl_ct[i] * dlp_zs2_ct[i];
+		P_dl_zs2 += dl_ct[i] * P_zs2_ct[i];
+		P_dlp_zs2 += dlp_zs2_ct[i] * P_zs2_ct[i];
+	}
+
+	dlp_zs1 = sqrt(dlp_zs1);
+	P_zs1 = sqrt(P_zs1);
+	dlp_zs2 = sqrt(dlp_zs2);
+	P_zs2 = sqrt(P_zs2);
+
+	kl1[0] = dl_zs1;
+	kl1[1] = dlp_zs1;
+	kl1[2] = P_zs1;
+	kl1[3] = acos(dl_dlp_zs1 / (dl_zs1 * dlp_zs1));
+	kl1[4] = acos(P_dl_zs1 / (P_zs1 * dl_zs1));
+	kl1[5] = acos(P_dlp_zs1 / (P_zs1 * dlp_zs1));
+
+	kl2[0] = dl_zs2;
+	kl2[1] = dlp_zs2;
+	kl2[2] = P_zs2;
+	kl2[3] = acos(dl_dlp_zs2 / (dl_zs2 * dlp_zs2));
+	kl2[4] = acos(P_dl_zs2 / (P_zs2 * dl_zs2));
+	kl2[5] = acos(P_dlp_zs2 / (P_zs2 * dlp_zs2));
+}
+
 void get_zs_loop_mom(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dlp, double q,
 		     double q_th, double q_phi)
 {
 	double dl, dlp, P, dl_dlp, P_dl, P_dlp, P2, dlp2, dl2, cos_dl_dlp, cos_P_dl, cos_P_dlp, sin_dl_dlp,
 	    sin_P_dl, sin_P_dlp, Podl, Podlp, dlodlp, cos_th, sin_th, phi_P, Poq, dlpoq, dloq, dl_zs1,
 	    dlp_zs1, P_zs1, dl_dlp_zs1, P_dl_zs1, P_dlp_zs1, dl_zs2, dlp_zs2, P_zs2, dl_dlp_zs2, P_dl_zs2,
-	    P_dlp_zs2, cos_P_q, cos_dlp_q, q2;
+	    P_dlp_zs2, cos_P_q, cos_dlp_q, q2, dl_ct[3], dlp_ct[3], P_ct[3], q_ct[3], dlp_zs1_ct[3],
+	    dlp_zs1_ct_mag, dlp_zs2_ct[3], dlp_zs2_ct_mag;
 
 	dl = ke[0];
 	dlp = ke[1];
@@ -178,6 +272,99 @@ static double get_zs_energy(const double *ke, unsigned int dim)
 	e_ext = 0.5 * (f[0] - f[1] - f[2] + f[3]);
 
 	return e_ext;
+}
+
+void get_zsp_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dl,
+			 double q, double th_q, double phi_q)
+{
+	double dl, dlp, P, dl_dlp, P_dl, P_dlp, P2, dlp2, dl2, cos_dl_dlp, cos_P_dl, cos_P_dlp, sin_dl_dlp,
+	    sin_P_dl, sin_P_dlp, Podl, Podlp, dlodlp, cos_th, sin_th, phi_P, Poq, dlpoq, dloq, dl_zs1,
+	    dlp_zs1, P_zs1, dl_dlp_zs1, P_dl_zs1, P_dlp_zs1, dl_zs2, dlp_zs2, P_zs2, dl_dlp_zs2, P_dl_zs2,
+	    P_dlp_zs2, cos_P_q, cos_dlp_q, q2, dl_ct[3], dlp_ct[3], P_ct[3], q_ct[3], dl_zs1_ct[3],
+	    dl_zs2_ct[3], P_zs1_ct[3], P_zs2_ct[3];
+	unsigned int i;
+
+	dl = ke[0];
+	dlp = ke[1];
+	P = ke[2];
+	dl_dlp = ke[3];
+	P_dl = ke[4];
+	P_dlp = ke[5];
+
+	q_ct[0] = q * cos(phi_q) * sin(th_q);
+	q_ct[1] = q * sin(phi_q) * sin(th_q);
+	q_ct[2] = q * cos(th_q);
+
+	dlp_ct[0] = 0;
+	dlp_ct[1] = 0;
+	dlp_ct[2] = dlp;
+
+	dl_ct[0] = dl * cos(phi_dl) * sin(dl_dlp);
+	dl_ct[1] = dl * sin(phi_dl) * sin(dl_dlp);
+	dl_ct[2] = dl * cos(dl_dlp);
+
+	P_ct[0] = P * cos(0) * sin(P_dlp);
+	P_ct[1] = P * sin(0) * sin(P_dlp);
+	P_ct[2] = P * cos(P_dlp);
+
+	dlp_zs1 = dlp_ct[2];
+	dlp_zs2 = dlp_ct[2];
+
+	dl_zs1 = 0;
+	P_zs1 = 0;
+	dl_zs2 = 0;
+	P_zs2 = 0;
+	dl_dlp_zs1 = 0;
+	P_dl_zs1 = 0;
+	P_dlp_zs1 = 0;
+	dl_dlp_zs2 = 0;
+	P_dl_zs2 = 0;
+	P_dlp_zs2 = 0;
+
+	for (i = 0; i < 3; i++) {
+
+		dl_zs1_ct[i] = 0.5 * (-P_ct[i] + q_ct[i] + dl_ct[i]);
+		P_zs1_ct[i] = P_ct[i] + q_ct[i] - dl_ct[i];
+
+		dl_zs2_ct[i] = 0.5 * (P_ct[i] - q_ct[i] + dl_ct[i]);
+		P_zs2_ct[i] = P_ct[i] + q_ct[i] + dl_ct[i];
+	}
+
+	for (i = 0; i < 3; i++) {
+
+		dl_zs1 += dl_zs1_ct[i] * dl_zs1_ct[i];
+		P_zs1 += P_zs1_ct[i] * P_zs1_ct[i];
+
+		dl_zs2 += dl_zs2_ct[i] * dl_zs2_ct[i];
+		P_zs2 += P_zs2_ct[i] * P_zs2_ct[i];
+
+		dl_dlp_zs1 += dlp_ct[i] * dl_zs1_ct[i];
+		P_dl_zs1 += dl_zs1_ct[i] * P_zs1_ct[i];
+		P_dlp_zs1 += dlp_ct[i] * P_zs1_ct[i];
+
+		dl_dlp_zs2 += dl_zs2_ct[i] * dlp_ct[i];
+		P_dl_zs2 += dl_zs2_ct[i] * P_zs2_ct[i];
+		P_dlp_zs2 += dlp_ct[i] * P_zs2_ct[i];
+	}
+
+	dl_zs1 = sqrt(dl_zs1);
+	P_zs1 = sqrt(P_zs1);
+	dl_zs2 = sqrt(dl_zs2);
+	P_zs2 = sqrt(P_zs2);
+
+	kl1[0] = dl_zs1;
+	kl1[1] = dlp_zs1;
+	kl1[2] = P_zs1;
+	kl1[3] = acos(dl_dlp_zs1 / (dl_zs1 * dlp_zs1));
+	kl1[4] = acos(P_dl_zs1 / (P_zs1 * dl_zs1));
+	kl1[5] = acos(P_dlp_zs1 / (P_zs1 * dlp_zs1));
+
+	kl2[0] = dl_zs2;
+	kl2[1] = dlp_zs2;
+	kl2[2] = P_zs2;
+	kl2[3] = acos(dl_dlp_zs2 / (dl_zs2 * dlp_zs2));
+	kl2[4] = acos(P_dl_zs2 / (P_zs2 * dl_zs2));
+	kl2[5] = acos(P_dlp_zs2 / (P_zs2 * dlp_zs2));
 }
 
 void get_zsp_loop_mom(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dl, double q,
@@ -349,10 +536,15 @@ int zs_flow(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, dou
 
 		if (dl < kf) {
 
+			/*
 			gauss_grid_rescale(gth1, wth1, nth, th, wth, 0, 0.25 * PI);
 			gauss_grid_rescale(gth1, wth1, nth, &th[nth], &wth[nth], 0.25 * PI, 0.5 * PI);
 			gauss_grid_rescale(gth1, wth1, nth, &th[2 * nth], &wth[2 * nth], PI, 0.75 * PI);
 			gauss_grid_rescale(gth1, wth1, nth, &th[3 * nth], &wth[3 * nth], 0.75 * PI, 0.5 * PI);
+			*/
+
+			gauss_grid_create(2 * nth, th, wth, 0, 0.5 * PI);
+			gauss_grid_create(2 * nth, &th[2 * nth], &wth[2 * nth], PI, 0.5 * PI);
 
 			sgn = 1;
 
@@ -397,7 +589,8 @@ int zs_flow(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, dou
 
 					e_q = -2 * q[l] * dl * cos_th;
 
-					get_zs_loop_mom(kl1, kl2, dim, ext_mom, phi_dlp, q[l], th[j], phi[i]);
+					get_zs_loop_mom_ct(kl1, kl2, dim, ext_mom, phi_dlp, q[l], th[j],
+							   phi[i]);
 
 					gma1[m] = vfun(kl1, dim, param);
 					gma2[m] = vfun(kl2, dim, param);
@@ -543,7 +736,8 @@ int zsp_flow(double *zsp, double *ext_mom, unsigned long ns, unsigned int dim, d
 
 					e_q = -2 * q[l] * dlp * cos_th;
 
-					get_zsp_loop_mom(kl1, kl2, dim, ext_mom, phi_dl, q[l], th[j], phi[i]);
+					get_zsp_loop_mom_ct(kl1, kl2, dim, ext_mom, phi_dl, q[l], th[j],
+							    phi[i]);
 
 					gma1[m] = vfun(kl1, dim, param);
 					gma2[m] = vfun(kl2, dim, param);
