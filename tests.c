@@ -114,14 +114,14 @@ double test_ph_phase_space(double dl, double kf, double fac, unsigned long nq, u
 	return fabs(I_exact - Is);
 }
 
-double test_zs_contact(double kf, unsigned long ns, unsigned long nq, unsigned long nth, unsigned long nphi,
-		       int seed)
+double test_zs_contact(int isdl_kf, double kf, unsigned long ns, unsigned long nq, unsigned long nth,
+		       unsigned long nphi, int seed)
 {
-	double *ke, st[6], en[6], *zs, zs_exact, *zs_diff, max_fabs, fac, g;
+	double *ke, st[6], en[6], *zs, zs_exact, *zs_diff, max_fabs, fac, g, norm;
 	unsigned long i;
 	int ret;
 
-	fprintf(stderr, "test_zs_contact() %s:%d\n", __FILE__, __LINE__);
+	fprintf(stderr, "test_zs_contact(dl>kf=%d) %s:%d\n", isdl_kf, __FILE__, __LINE__);
 
 	ke = malloc(ns * DIM * sizeof(double));
 	assert(ke);
@@ -133,7 +133,11 @@ double test_zs_contact(double kf, unsigned long ns, unsigned long nq, unsigned l
 	assert(zs_diff);
 
 	st[0] = 0;
-	en[0] = 3 * kf;
+	if (isdl_kf == 0) {
+		en[0] = kf;
+	} else {
+		en[0] = 3 * kf;
+	}
 	st[1] = 0;
 	en[1] = 3 * kf;
 	st[2] = 0;
@@ -159,12 +163,14 @@ double test_zs_contact(double kf, unsigned long ns, unsigned long nq, unsigned l
 	}
 
 	max_fabs = get_max_fabs(zs_diff, ns);
+	norm = get_norm_real(zs_diff, ns);
+	norm /= ns;
 
 	free(zs);
 	free(zs_diff);
 	free(ke);
 
-	return max_fabs;
+	return 0.5 * (max_fabs + norm);
 }
 
 double test_get_zs_loop_mom(unsigned long ns, double kf, int seed)
@@ -306,14 +312,14 @@ double test_get_zs_loop_mom(unsigned long ns, double kf, int seed)
 	return diff;
 }
 
-double test_zsp_contact(double kf, unsigned long ns, unsigned long nq, unsigned long nth, unsigned long nphi,
-			int seed)
+double test_zsp_contact(int isdlp_kf, double kf, unsigned long ns, unsigned long nq, unsigned long nth,
+			unsigned long nphi, int seed)
 {
-	double *ke, st[6], en[6], *zsp, zsp_exact, *zsp_diff, max_fabs, fac, g;
+	double *ke, st[6], en[6], *zsp, zsp_exact, *zsp_diff, max_fabs, fac, g, norm;
 	unsigned long i;
 	int ret;
 
-	fprintf(stderr, "test_zsp_contact() %s:%d\n", __FILE__, __LINE__);
+	fprintf(stderr, "test_zsp_contact(dlp>kf=%d) %s:%d\n", isdlp_kf, __FILE__, __LINE__);
 
 	ke = malloc(ns * DIM * sizeof(double));
 	assert(ke);
@@ -327,7 +333,11 @@ double test_zsp_contact(double kf, unsigned long ns, unsigned long nq, unsigned 
 	st[0] = 0;
 	en[0] = 3 * kf;
 	st[1] = 0;
-	en[1] = 3 * kf;
+	if (isdlp_kf == 0) {
+		en[1] = kf;
+	} else {
+		en[1] = 3 * kf;
+	}
 	st[2] = 0;
 	en[2] = 3 * kf;
 	st[3] = 0;
@@ -351,12 +361,14 @@ double test_zsp_contact(double kf, unsigned long ns, unsigned long nq, unsigned 
 	}
 
 	max_fabs = get_max_fabs(zsp_diff, ns);
+	norm = get_norm_real(zsp_diff, ns);
+	norm /= ns;
 
 	free(zsp);
 	free(zsp_diff);
 	free(ke);
 
-	return max_fabs;
+	return 0.5 * (max_fabs + norm);
 }
 
 double test_get_zsp_loop_mom(unsigned long ns, double kf, int seed)
@@ -498,4 +510,172 @@ double test_get_zsp_loop_mom(unsigned long ns, double kf, int seed)
 	free(ke);
 
 	return diff;
+}
+
+double test_antisymmetry(double kf, unsigned long ns, unsigned long nq, unsigned long nth, unsigned long nphi,
+			 int seed)
+{
+	double *ke, st[6], en[6], *zs, *zsp, *rhs_dir, *rhs_exch, *diff, max_fabs, fac, g, tmp, norm;
+	unsigned long i;
+	int ret;
+
+	fprintf(stderr, "test_antisymmetry() %s:%d\n", __FILE__, __LINE__);
+
+	ke = malloc(ns * DIM * sizeof(double));
+	assert(ke);
+
+	zs = malloc(ns * sizeof(double));
+	assert(zs);
+
+	zsp = malloc(ns * sizeof(double));
+	assert(zsp);
+
+	rhs_dir = malloc(ns * sizeof(double));
+	assert(rhs_dir);
+
+	rhs_exch = malloc(ns * sizeof(double));
+	assert(rhs_exch);
+
+	diff = malloc(ns * sizeof(double));
+	assert(diff);
+
+	st[0] = 0;
+	en[0] = kf;
+	st[1] = 0;
+	en[1] = kf;
+	st[2] = 0;
+	en[2] = 3 * kf;
+	st[3] = 0;
+	en[3] = PI;
+	st[4] = 0;
+	en[4] = PI;
+	st[5] = 0;
+	en[5] = 2 * PI;
+
+	fill_ext_momenta6(ke, ns, st, en, seed);
+
+	fac = 0.96;
+
+	ret = zs_flow(zs, ke, ns, DIM, kf, nq, nth, nphi, v_yukawa, NULL, fac);
+	ret = zsp_flow(zsp, ke, ns, DIM, kf, nq, nth, nphi, v_yukawa, NULL, fac);
+
+	for (i = 0; i < ns; i++) {
+		rhs_dir[i] = zs[i] - zsp[i];
+	}
+
+	for (i = 0; i < ns; i++) {
+		/* dl <-> dlp */
+		tmp = ke[DIM * i + 0];
+		ke[DIM * i + 0] = ke[DIM * i + 1];
+		ke[DIM * i + 1] = tmp;
+
+		/* P_dl <-> P_dlp */
+		tmp = ke[DIM * i + 4];
+		ke[DIM * i + 4] = ke[DIM * i + 5];
+		ke[DIM * i + 5] = tmp;
+	}
+
+	ret = zs_flow(zs, ke, ns, DIM, kf, nq, nth, nphi, v_yukawa, NULL, fac);
+	ret = zsp_flow(zsp, ke, ns, DIM, kf, nq, nth, nphi, v_yukawa, NULL, fac);
+
+	for (i = 0; i < ns; i++) {
+		rhs_exch[i] = zs[i] - zsp[i];
+	}
+
+	for (i = 0; i < ns; i++) {
+		diff[i] = rhs_dir[i] + rhs_exch[i];
+	}
+
+	max_fabs = get_max_fabs(diff, ns);
+	norm = get_norm_real(diff, ns);
+
+	norm /= ns;
+
+	free(zsp);
+	free(zs);
+	free(rhs_dir);
+	free(rhs_exch);
+	free(diff);
+	free(ke);
+
+	return 0.5 * (norm + max_fabs);
+}
+
+double test_convergence(unsigned long ns, double kf, int seed)
+{
+
+	double *ke, st[6], en[6], *zs, *zsp, *zs1, *zsp1, rhs, rhs1, *diff, max_fabs, fac, g, tmp, norm;
+	unsigned long i, nq[2], nth[2], nphi[2];
+	int ret;
+
+	fprintf(stderr, "test_convergence() %s:%d\n", __FILE__, __LINE__);
+
+	nq[0] = 10;
+	nth[0] = 10;
+	nphi[0] = 10;
+
+	nq[1] = 20;
+	nth[1] = 20;
+	nphi[1] = 20;
+
+	ke = malloc(ns * DIM * sizeof(double));
+	assert(ke);
+
+	zs = malloc(ns * sizeof(double));
+	assert(zs);
+
+	zs1 = malloc(ns * sizeof(double));
+	assert(zs1);
+
+	zsp = malloc(ns * sizeof(double));
+	assert(zsp);
+
+	zsp1 = malloc(ns * sizeof(double));
+	assert(zsp1);
+
+	diff = malloc(ns * sizeof(double));
+	assert(diff);
+
+	st[0] = 0;
+	en[0] = 3 * kf;
+	st[1] = 0;
+	en[1] = 3 * kf;
+	st[2] = 0;
+	en[2] = 3 * kf;
+	st[3] = 0;
+	en[3] = PI;
+	st[4] = 0;
+	en[4] = PI;
+	st[5] = 0;
+	en[5] = 2 * PI;
+
+	fill_ext_momenta6(ke, ns, st, en, seed);
+
+	fac = 0.96;
+
+	ret = zs_flow(zs, ke, ns, DIM, kf, nq[0], nth[0], nphi[0], v_exp, NULL, fac);
+	ret = zsp_flow(zsp, ke, ns, DIM, kf, nq[0], nth[0], nphi[0], v_exp, NULL, fac);
+
+	ret = zs_flow(zs1, ke, ns, DIM, kf, nq[1], nth[1], nphi[1], v_exp, NULL, fac);
+	ret = zsp_flow(zsp1, ke, ns, DIM, kf, nq[1], nth[1], nphi[1], v_exp, NULL, fac);
+
+	for (i = 0; i < ns; i++) {
+		rhs = zs[i] - zsp[i];
+		rhs1 = zs1[i] - zsp1[i];
+		diff[i] = fabs(rhs - rhs1);
+	}
+
+	max_fabs = get_max_fabs(diff, ns);
+	norm = get_norm_real(diff, ns);
+
+	norm /= ns;
+
+	free(diff);
+	free(zsp1);
+	free(zsp);
+	free(zs1);
+	free(zs);
+	free(ke);
+
+	return norm + max_fabs;
 }
