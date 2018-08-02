@@ -612,11 +612,11 @@ double test_convergence(unsigned long ns, double kf, int seed)
 
 	nq[0] = 10;
 	nth[0] = 10;
-	nphi[0] = 10;
+	nphi[0] = 15;
 
-	nq[1] = 20;
-	nth[1] = 20;
-	nphi[1] = 20;
+	nq[1] = 2 * nq[0];
+	nth[1] = 2 * nth[0];
+	nphi[1] = 2 * nphi[0];
 
 	ke = malloc(ns * DIM * sizeof(double));
 	assert(ke);
@@ -677,5 +677,5 @@ double test_convergence(unsigned long ns, double kf, int seed)
 	free(zs);
 	free(ke);
 
-	return norm + max_fabs;
+	return norm;
 }
