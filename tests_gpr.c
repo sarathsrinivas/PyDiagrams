@@ -66,11 +66,11 @@ double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed)
 	assert(var);
 
 	st6[0] = 0;
-	en6[0] = 0.5 * kf;
+	en6[0] = 3 * kf;
 	st6[1] = 0;
-	en6[1] = 0.5 * kf;
+	en6[1] = 3 * kf;
 	st6[2] = 0;
-	en6[2] = 0.5 * kf;
+	en6[2] = 3 * kf;
 	st6[3] = 0;
 	en6[3] = PI;
 	st6[4] = 0;
@@ -78,8 +78,8 @@ double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed)
 	st6[5] = 0;
 	en6[5] = 2 * PI;
 
-	fill_ext_momenta6(ke, ns, st6, en6, seed);
-	fill_ext_momenta6(ket, nt, st6, en6, seed + 1234);
+	fill_ext_momenta_3ball(ke, ns, st6, en6, seed);
+	fill_ext_momenta_3ball(ket, nt, st6, en6, seed + 1234);
 
 	fac = 0.96;
 
@@ -91,13 +91,6 @@ double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed)
 	for (i = 0; i < np; i++) {
 		p[i] = 1.0;
 	}
-
-	p[0] = +2.720248840222972E-01;
-	p[1] = +2.779819266529766E-01;
-	p[2] = +7.480748300074691E-01;
-	p[3] = +3.608480347113331E+00;
-	p[4] = +7.787434830890305E-01;
-	p[5] = +7.570734481190660E-01;
 
 	for (i = 0; i < ns; i++) {
 		rhs[i] = zs[i] - zsp[i];
@@ -120,7 +113,7 @@ double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed)
 
 	gpr_predict(rhs_p, wt, krpx, nt, ns);
 
-	diff = get_diff_vec_real(rhs_t, rhs_p, nt);
+	diff = get_rel_error(rhs_t, rhs_p, nt);
 	assert(diff);
 
 	for (i = 0; i < nt; i++) {
