@@ -15,7 +15,7 @@
 double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed)
 {
 	double *ke, *ket, *zs, *zsp, *rhs, st6[6], en6[6], *zs_t, *zsp_t, *rhs_t, *rhs_p, p[NP_SE_ARD], *wt,
-	    *krxx, *lkrxx, *krpx, *krpp, *var, llhd, ret, fac, *diff;
+	    *krxx, *lkrxx, *krpx, *krpp, *var, llhd, ret, fac, *diff, stat[3];
 	int np, i, j, k, nq, nth, nphi, info;
 
 	nq = 10;
@@ -66,11 +66,11 @@ double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed)
 	assert(var);
 
 	st6[0] = 0;
-	en6[0] = 3 * kf;
+	en6[0] = kf;
 	st6[1] = 0;
-	en6[1] = 3 * kf;
+	en6[1] = kf;
 	st6[2] = 0;
-	en6[2] = 3 * kf;
+	en6[2] = kf;
 	st6[3] = 0;
 	en6[3] = PI;
 	st6[4] = 0;
@@ -116,9 +116,13 @@ double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed)
 	diff = get_rel_error(rhs_t, rhs_p, nt);
 	assert(diff);
 
+	get_stat(diff, nt, stat, 3);
+
 	for (i = 0; i < nt; i++) {
 		printf("%+.15E %+.15E %+.15E\n", rhs_t[i], rhs_p[i], diff[i]);
 	}
+
+	printf("\n%+.15E : MEAN\n%+.15E : SD\n%+.15E : MAX_FABS\n", stat[0], stat[1], stat[2]);
 
 	free(zs);
 	free(zs_t);
