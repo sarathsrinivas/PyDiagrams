@@ -10,13 +10,14 @@
 #define PREFAC (1)
 #define DIM (6)
 
-int zs_flow_gpr(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, double kf, unsigned long nq,
-		unsigned long nth, unsigned long nphi, double fac, const double *p, int np, const double *wt)
+int zs_flow_gpr(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, double kf, double kmax,
+		unsigned long nq, unsigned long nth, unsigned long nphi, double fac, const double *p, int np,
+		const double *wt, double *lkrxx)
 {
 	double dl, dl2, P_dl, dl_dlp, P_dlp, phi_dlp, e_ext, *q, *wq, *gth1, *wth1, *th, *wth, *phi, *wphi,
-	    *w, cos_th, sin_th, a, b, q0, q1, e_q, q2, *gma1, *gma2, kl1[DIM], kl2[DIM], pf_th, pf_phi, pf_q,
-	    *gq1, *wq1, sgn, th_max, wphi_i, wth_j, *krpx;
-	unsigned long n, i, j, l, m, nm;
+	    *w, cos_th, sin_th, a, b, q0, q1, e_q, q2, *gma1, *gma2, *kl1, *kl2, pf_th, pf_phi, pf_q, *gq1,
+	    *wq1, sgn, th_max, wphi_i, wth_j, *krpx, *krpp, *var, lims[2], Q0, Q1, limsgn;
+	unsigned long n, i, j, l, m, nm, k;
 
 	sgn = 1;
 
@@ -30,6 +31,12 @@ int zs_flow_gpr(double *zs, double *ext_mom, unsigned long ns, unsigned int dim,
 
 	gma2 = malloc(nm * sizeof(double));
 	assert(gma2);
+
+	kl1 = calloc(DIM * nm, sizeof(double));
+	assert(kl1);
+
+	kl2 = calloc(DIM * nm, sizeof(double));
+	assert(kl2);
 
 	gq1 = malloc(nq * sizeof(double));
 	assert(gq1);
@@ -58,6 +65,12 @@ int zs_flow_gpr(double *zs, double *ext_mom, unsigned long ns, unsigned int dim,
 
 	krpx = malloc(nm * ns * sizeof(double));
 	assert(krpx);
+
+	krpp = malloc(nm * nm * sizeof(double));
+	assert(krpp);
+
+	var = malloc(nm * nm * sizeof(double));
+	assert(var);
 
 	gauss_grid_create(nphi, phi, wphi, 0, 2 * PI);
 
@@ -126,8 +139,9 @@ int zs_flow_gpr(double *zs, double *ext_mom, unsigned long ns, unsigned int dim,
 
 					e_q = -2 * q[l] * dl * cos_th;
 
-					get_zs_loop_mom_ct(kl1, kl2, dim, &ext_mom[n * dim], phi_dlp, q[l],
-							   th[j], phi[i]);
+					get_zs_loop_mom_ct(&kl1[DIM * m], &kl2[DIM * m], dim,
+							   &ext_mom[n * dim], phi_dlp, q[l], th[j], phi[i],
+							   2.9 * kf);
 
 					w[m] = wq[l] * wphi_i * wth_j * sin_th * q2 * 2 * (e_q + e_ext);
 
@@ -138,6 +152,9 @@ int zs_flow_gpr(double *zs, double *ext_mom, unsigned long ns, unsigned int dim,
 
 		get_krn_se_ard(krpx, kl1, ext_mom, nm, ns, dim, p, np);
 		gpr_predict(gma1, wt, krpx, nm, ns);
+
+		get_krn_se_ard(krpp, kl1, kl1, nm, nm, dim, p, np);
+		get_var_mat_chd(var, krpp, krpx, lkrxx, nm, ns);
 
 		get_krn_se_ard(krpx, kl2, ext_mom, nm, ns, dim, p, np);
 		gpr_predict(gma2, wt, krpx, nm, ns);
@@ -164,6 +181,10 @@ int zs_flow_gpr(double *zs, double *ext_mom, unsigned long ns, unsigned int dim,
 	free(gma1);
 	free(w);
 	free(krpx);
+	free(krpp);
+	free(var);
+	free(kl1);
+	free(kl2);
 
 	return 0;
 }

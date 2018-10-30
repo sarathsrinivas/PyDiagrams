@@ -180,7 +180,7 @@ double test_get_zs_loop_mom(unsigned long ns, double kf, int seed)
 	    dlp_zs2_ct[3], P_zs2_ct[3], dl_zs1_cmp, dlp_zs1_cmp, P_zs1_cmp, dl_zs2_cmp, dlp_zs2_cmp,
 	    P_zs2_cmp, P_dl_zs1_cmp, P_dlp_zs1_cmp, dl_dlp_zs1_cmp, P_dl_zs2_cmp, P_dlp_zs2_cmp,
 	    dl_dlp_zs2_cmp, diff;
-	unsigned long i;
+	unsigned long i, k;
 	dsfmt_t drng;
 
 	fprintf(stderr, "test_get_zs_loop_mom() %s:%d\n", __FILE__, __LINE__);
@@ -201,110 +201,117 @@ double test_get_zs_loop_mom(unsigned long ns, double kf, int seed)
 	st[5] = 0;
 	en[5] = 2 * PI;
 
-	fill_ext_momenta6(ke, ns, st, en, seed);
-
+	fill_ext_momenta_3ball(ke, ns, st, en, seed);
 	dsfmt_init_gen_rand(&drng, seed + 7);
 
-	q = dsfmt_genrand_close_open(&drng);
-	th_q = PI * dsfmt_genrand_close_open(&drng);
-	phi_q = 2 * PI * dsfmt_genrand_close_open(&drng);
+	for (k = 0; k < 100; k++) {
 
-	q_ct[0] = q * cos(phi_q) * sin(th_q);
-	q_ct[1] = q * sin(phi_q) * sin(th_q);
-	q_ct[2] = q * cos(th_q);
+		q = dsfmt_genrand_close_open(&drng);
+		th_q = PI * dsfmt_genrand_close_open(&drng);
+		phi_q = 2 * PI * dsfmt_genrand_close_open(&drng);
 
-	diff = 0;
+		q_ct[0] = q * cos(phi_q) * sin(th_q);
+		q_ct[1] = q * sin(phi_q) * sin(th_q);
+		q_ct[2] = q * cos(th_q);
 
-	for (i = 0; i < ns; i++) {
+		diff = 0;
 
-		dl = ke[i * DIM + 0];
-		dlp = ke[i * DIM + 1];
-		P = ke[i * DIM + 2];
-		dl_dlp = ke[i * DIM + 3];
-		P_dl = ke[i * DIM + 4];
-		P_dlp = ke[i * DIM + 5];
+		for (i = 0; i < ns; i++) {
 
-		phi_dlp = acos((cos(P_dlp) - cos(P_dl) * cos(dl_dlp)) / (sin(P_dl) * sin(dl_dlp)));
+			dl = ke[i * DIM + 0];
+			dlp = ke[i * DIM + 1];
+			P = ke[i * DIM + 2];
+			dl_dlp = ke[i * DIM + 3];
+			P_dl = ke[i * DIM + 4];
+			P_dlp = ke[i * DIM + 5];
 
-		get_zs_loop_mom(kl1, kl2, DIM, &ke[i * DIM], phi_dlp, q, th_q, phi_q);
+			phi_dlp = acos((cos(P_dlp) - cos(P_dl) * cos(dl_dlp)) / (sin(P_dl) * sin(dl_dlp)));
 
-		dl_ct[0] = 0;
-		dl_ct[1] = 0;
-		dl_ct[2] = dl;
+			get_zs_loop_mom(kl1, kl2, DIM, &ke[i * DIM], phi_dlp, q, th_q, phi_q);
 
-		dlp_ct[0] = dlp * cos(phi_dlp) * sin(dl_dlp);
-		dlp_ct[1] = dlp * sin(phi_dlp) * sin(dl_dlp);
-		dlp_ct[2] = dlp * cos(dl_dlp);
+			printf("%+.15E %+.15E %+.15E %+.15E %+.15E %+.15E\n", kl1[3], kl1[4], kl1[5], kl2[3],
+			       kl2[4], kl2[5]);
 
-		P_ct[0] = P * cos(0) * sin(P_dl);
-		P_ct[1] = P * sin(0) * sin(P_dl);
-		P_ct[2] = P * cos(P_dl);
+			dl_ct[0] = 0;
+			dl_ct[1] = 0;
+			dl_ct[2] = dl;
 
-		dlp_zs1_ct[0] = 0.5 * (P_ct[0] - q_ct[0] + dlp_ct[0]);
-		dlp_zs1_ct[1] = 0.5 * (P_ct[1] - q_ct[1] + dlp_ct[1]);
-		dlp_zs1_ct[2] = 0.5 * (P_ct[2] - q_ct[2] + dlp_ct[2]);
+			dlp_ct[0] = dlp * cos(phi_dlp) * sin(dl_dlp);
+			dlp_ct[1] = dlp * sin(phi_dlp) * sin(dl_dlp);
+			dlp_ct[2] = dlp * cos(dl_dlp);
 
-		P_zs1_ct[0] = P_ct[0] + q_ct[0] + dlp_ct[0];
-		P_zs1_ct[1] = P_ct[1] + q_ct[1] + dlp_ct[1];
-		P_zs1_ct[2] = P_ct[2] + q_ct[2] + dlp_ct[2];
+			P_ct[0] = P * cos(0) * sin(P_dl);
+			P_ct[1] = P * sin(0) * sin(P_dl);
+			P_ct[2] = P * cos(P_dl);
 
-		dlp_zs2_ct[0] = 0.5 * (-P_ct[0] + q_ct[0] + dlp_ct[0]);
-		dlp_zs2_ct[1] = 0.5 * (-P_ct[1] + q_ct[1] + dlp_ct[1]);
-		dlp_zs2_ct[2] = 0.5 * (-P_ct[2] + q_ct[2] + dlp_ct[2]);
+			dlp_zs1_ct[0] = 0.5 * (P_ct[0] - q_ct[0] + dlp_ct[0]);
+			dlp_zs1_ct[1] = 0.5 * (P_ct[1] - q_ct[1] + dlp_ct[1]);
+			dlp_zs1_ct[2] = 0.5 * (P_ct[2] - q_ct[2] + dlp_ct[2]);
 
-		P_zs2_ct[0] = P_ct[0] + q_ct[0] - dlp_ct[0];
-		P_zs2_ct[1] = P_ct[1] + q_ct[1] - dlp_ct[1];
-		P_zs2_ct[2] = P_ct[2] + q_ct[2] - dlp_ct[2];
+			P_zs1_ct[0] = P_ct[0] + q_ct[0] + dlp_ct[0];
+			P_zs1_ct[1] = P_ct[1] + q_ct[1] + dlp_ct[1];
+			P_zs1_ct[2] = P_ct[2] + q_ct[2] + dlp_ct[2];
 
-		dl_zs1_cmp = dl_ct[2];
-		dlp_zs1_cmp = sqrt(dlp_zs1_ct[0] * dlp_zs1_ct[0] + dlp_zs1_ct[1] * dlp_zs1_ct[1]
-				   + dlp_zs1_ct[2] * dlp_zs1_ct[2]);
-		P_zs1_cmp
-		    = sqrt(P_zs1_ct[0] * P_zs1_ct[0] + P_zs1_ct[1] * P_zs1_ct[1] + P_zs1_ct[2] * P_zs1_ct[2]);
+			dlp_zs2_ct[0] = 0.5 * (-P_ct[0] + q_ct[0] + dlp_ct[0]);
+			dlp_zs2_ct[1] = 0.5 * (-P_ct[1] + q_ct[1] + dlp_ct[1]);
+			dlp_zs2_ct[2] = 0.5 * (-P_ct[2] + q_ct[2] + dlp_ct[2]);
 
-		dl_zs2_cmp = dl_ct[2];
-		dlp_zs2_cmp = sqrt(dlp_zs2_ct[0] * dlp_zs2_ct[0] + dlp_zs2_ct[1] * dlp_zs2_ct[1]
-				   + dlp_zs2_ct[2] * dlp_zs2_ct[2]);
-		P_zs2_cmp
-		    = sqrt(P_zs2_ct[0] * P_zs2_ct[0] + P_zs2_ct[1] * P_zs2_ct[1] + P_zs2_ct[2] * P_zs2_ct[2]);
+			P_zs2_ct[0] = P_ct[0] + q_ct[0] - dlp_ct[0];
+			P_zs2_ct[1] = P_ct[1] + q_ct[1] - dlp_ct[1];
+			P_zs2_ct[2] = P_ct[2] + q_ct[2] - dlp_ct[2];
 
-		dl_dlp_zs1_cmp
-		    = acos((dl_ct[0] * dlp_zs1_ct[0] + dl_ct[1] * dlp_zs1_ct[1] + dl_ct[2] * dlp_zs1_ct[2])
-			   / (dl * dlp_zs1_cmp));
+			dl_zs1_cmp = dl_ct[2];
+			dlp_zs1_cmp = sqrt(dlp_zs1_ct[0] * dlp_zs1_ct[0] + dlp_zs1_ct[1] * dlp_zs1_ct[1]
+					   + dlp_zs1_ct[2] * dlp_zs1_ct[2]);
+			P_zs1_cmp = sqrt(P_zs1_ct[0] * P_zs1_ct[0] + P_zs1_ct[1] * P_zs1_ct[1]
+					 + P_zs1_ct[2] * P_zs1_ct[2]);
 
-		P_dl_zs1_cmp = acos((dl_ct[0] * P_zs1_ct[0] + dl_ct[1] * P_zs1_ct[1] + dl_ct[2] * P_zs1_ct[2])
-				    / (dl * P_zs1_cmp));
+			dl_zs2_cmp = dl_ct[2];
+			dlp_zs2_cmp = sqrt(dlp_zs2_ct[0] * dlp_zs2_ct[0] + dlp_zs2_ct[1] * dlp_zs2_ct[1]
+					   + dlp_zs2_ct[2] * dlp_zs2_ct[2]);
+			P_zs2_cmp = sqrt(P_zs2_ct[0] * P_zs2_ct[0] + P_zs2_ct[1] * P_zs2_ct[1]
+					 + P_zs2_ct[2] * P_zs2_ct[2]);
 
-		P_dlp_zs1_cmp = acos(
-		    (dlp_zs1_ct[0] * P_zs1_ct[0] + dlp_zs1_ct[1] * P_zs1_ct[1] + dlp_zs1_ct[2] * P_zs1_ct[2])
-		    / (dlp_zs1_cmp * P_zs1_cmp));
+			dl_dlp_zs1_cmp = acos(
+			    (dl_ct[0] * dlp_zs1_ct[0] + dl_ct[1] * dlp_zs1_ct[1] + dl_ct[2] * dlp_zs1_ct[2])
+			    / (dl * dlp_zs1_cmp));
 
-		dl_dlp_zs2_cmp
-		    = acos((dl_ct[0] * dlp_zs2_ct[0] + dl_ct[1] * dlp_zs2_ct[1] + dl_ct[2] * dlp_zs2_ct[2])
-			   / (dl * dlp_zs2_cmp));
+			P_dl_zs1_cmp
+			    = acos((dl_ct[0] * P_zs1_ct[0] + dl_ct[1] * P_zs1_ct[1] + dl_ct[2] * P_zs1_ct[2])
+				   / (dl * P_zs1_cmp));
 
-		P_dl_zs2_cmp = acos((dl_ct[0] * P_zs2_ct[0] + dl_ct[1] * P_zs2_ct[1] + dl_ct[2] * P_zs2_ct[2])
-				    / (dl * P_zs2_cmp));
+			P_dlp_zs1_cmp = acos((dlp_zs1_ct[0] * P_zs1_ct[0] + dlp_zs1_ct[1] * P_zs1_ct[1]
+					      + dlp_zs1_ct[2] * P_zs1_ct[2])
+					     / (dlp_zs1_cmp * P_zs1_cmp));
 
-		P_dlp_zs2_cmp = acos(
-		    (dlp_zs2_ct[0] * P_zs2_ct[0] + dlp_zs2_ct[1] * P_zs2_ct[1] + dlp_zs2_ct[2] * P_zs2_ct[2])
-		    / (dlp_zs2_cmp * P_zs2_cmp));
+			dl_dlp_zs2_cmp = acos(
+			    (dl_ct[0] * dlp_zs2_ct[0] + dl_ct[1] * dlp_zs2_ct[1] + dl_ct[2] * dlp_zs2_ct[2])
+			    / (dl * dlp_zs2_cmp));
 
-		diff += fabs(dl_zs1_cmp - kl1[0]);
-		diff += fabs(dlp_zs1_cmp - kl1[1]);
-		diff += fabs(P_zs1_cmp - kl1[2]);
+			P_dl_zs2_cmp
+			    = acos((dl_ct[0] * P_zs2_ct[0] + dl_ct[1] * P_zs2_ct[1] + dl_ct[2] * P_zs2_ct[2])
+				   / (dl * P_zs2_cmp));
 
-		diff += fabs(dl_zs2_cmp - kl2[0]);
-		diff += fabs(dlp_zs2_cmp - kl2[1]);
-		diff += fabs(P_zs2_cmp - kl2[2]);
+			P_dlp_zs2_cmp = acos((dlp_zs2_ct[0] * P_zs2_ct[0] + dlp_zs2_ct[1] * P_zs2_ct[1]
+					      + dlp_zs2_ct[2] * P_zs2_ct[2])
+					     / (dlp_zs2_cmp * P_zs2_cmp));
 
-		diff += fabs(dl_dlp_zs1_cmp - kl1[3]);
-		diff += fabs(P_dl_zs1_cmp - kl1[4]);
-		diff += fabs(P_dlp_zs1_cmp - kl1[5]);
+			diff += fabs(dl_zs1_cmp - kl1[0]);
+			diff += fabs(dlp_zs1_cmp - kl1[1]);
+			diff += fabs(P_zs1_cmp - kl1[2]);
 
-		diff += fabs(dl_dlp_zs2_cmp - kl2[3]);
-		diff += fabs(P_dl_zs2_cmp - kl2[4]);
-		diff += fabs(P_dlp_zs2_cmp - kl2[5]);
+			diff += fabs(dl_zs2_cmp - kl2[0]);
+			diff += fabs(dlp_zs2_cmp - kl2[1]);
+			diff += fabs(P_zs2_cmp - kl2[2]);
+
+			diff += fabs(dl_dlp_zs1_cmp - kl1[3]);
+			diff += fabs(P_dl_zs1_cmp - kl1[4]);
+			diff += fabs(P_dlp_zs1_cmp - kl1[5]);
+
+			diff += fabs(dl_dlp_zs2_cmp - kl2[3]);
+			diff += fabs(P_dl_zs2_cmp - kl2[4]);
+			diff += fabs(P_dlp_zs2_cmp - kl2[5]);
+		}
 	}
 
 	free(ke);
@@ -678,4 +685,76 @@ double test_convergence(unsigned long ns, double kf, int seed)
 	free(ke);
 
 	return norm;
+}
+
+double test_mom_closure(double kmax, unsigned long ns, int seed)
+{
+	double *ke, st6[3], en6[3], dl, dlp, P, dl_dlp, P_dl, P_dlp, phi_dlp, q, th_q, phi_q, a, b, q0, q1,
+	    kf, sgn, lims[2], limsgn, kl1[DIM], kl2[DIM], th_max, Q1, Q0;
+	unsigned long i, j;
+	dsfmt_t drng;
+
+	ke = malloc(DIM * ns * sizeof(double));
+	assert(ke);
+
+	kf = 1.0;
+
+	st6[0] = 0;
+	en6[0] = kmax;
+	st6[1] = 0;
+	en6[1] = kmax;
+	st6[2] = 0;
+	en6[2] = kmax;
+
+	fill_ext_momenta_3ball(ke, ns, st6, en6, seed);
+
+	dsfmt_init_gen_rand(&drng, seed + 213);
+
+	for (i = 0; i < ns; i++) {
+
+		dl = ke[DIM * i + 0];
+		dlp = ke[DIM * i + 1];
+		P = ke[DIM * i + 2];
+		dl_dlp = ke[DIM * i + 3];
+		P_dl = ke[DIM * i + 4];
+		P_dlp = ke[DIM * i + 5];
+
+		phi_dlp = acos((cos(P_dlp) - cos(P_dl) * cos(dl_dlp)) / (sin(P_dl) * sin(dl_dlp)));
+
+		for (j = 0; j < 1000; j++) {
+
+			phi_q = 2 * PI * dsfmt_genrand_close_open(&drng);
+
+			if (dl < kf) {
+				th_q = PI * dsfmt_genrand_close_open(&drng);
+				sgn = 1.0;
+			} else {
+				th_max = asin(kf / dl);
+				th_q = (PI - th_max) + th_max * dsfmt_genrand_close_open(&drng);
+				sgn = -1.0;
+
+				a = dl * cos(th_q);
+				b = sqrt(kf * kf - dl * dl * sin(th_q) * sin(th_q));
+
+				q0 = sgn * (-a + b);
+				q1 = a + b;
+
+				get_zs_reg_limits(kmax, &ke[DIM * i], phi_dlp, th_q, phi_q, lims);
+
+				Q0 = q0;
+				Q1 = (q1 < lims[1]) ? q1 : lims[1];
+
+				limsgn = Q1 - Q0;
+				q = Q0 + (Q1 - Q0) * dsfmt_genrand_close_open(&drng);
+
+				get_zs_loop_mom_ct(kl1, kl2, DIM, &ke[DIM * i], phi_dlp, q, th_q, phi_q, 0);
+
+				printf("%+.15E %+.15E %+.15E %+.15E\n", kl1[1], kl1[2], kl2[1], kl2[2]);
+			}
+		}
+	}
+
+	free(ke);
+
+	return 0;
 }

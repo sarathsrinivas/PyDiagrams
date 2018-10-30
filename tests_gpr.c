@@ -14,8 +14,8 @@
 
 double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed)
 {
-	double *ke, *ket, *zs, *zsp, *rhs, st6[6], en6[6], *zs_t, *zsp_t, *rhs_t, *rhs_p, p[NP_SE_ARD], *wt,
-	    *krxx, *lkrxx, *krpx, *krpp, *var, llhd, ret, fac, *diff, stat[3];
+	double *ke, *ket, *ke_ct, *ket_ct, *zs, *zsp, *rhs, st6[6], en6[6], *zs_t, *zsp_t, *rhs_t, *rhs_p,
+	    p[NP_SE_ARD], *wt, *krxx, *lkrxx, *krpx, *krpp, *var, llhd, ret, fac, *diff, stat[3];
 	int np, i, j, k, nq, nth, nphi, info;
 
 	nq = 10;
@@ -28,6 +28,11 @@ double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed)
 	assert(ke);
 	ket = malloc(nt * DIM * sizeof(double));
 	assert(ket);
+
+	ke_ct = malloc(ns * DIM * sizeof(double));
+	assert(ke_ct);
+	ket_ct = malloc(nt * DIM * sizeof(double));
+	assert(ket_ct);
 
 	wt = malloc(ns * sizeof(double));
 	assert(wt);
@@ -66,11 +71,11 @@ double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed)
 	assert(var);
 
 	st6[0] = 0;
-	en6[0] = kf;
+	en6[0] = 3 * kf;
 	st6[1] = 0;
-	en6[1] = kf;
+	en6[1] = 3 * kf;
 	st6[2] = 0;
-	en6[2] = kf;
+	en6[2] = 3 * kf;
 	st6[3] = 0;
 	en6[3] = PI;
 	st6[4] = 0;
@@ -100,6 +105,9 @@ double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed)
 		rhs_t[i] = zs_t[i] - zsp_t[i];
 	}
 
+	sph_ct_mom6(ke, DIM, ns, ke_ct);
+	sph_ct_mom6(ket, DIM, nt, ket_ct);
+
 	get_hyper_param_ard(p, np, ke, rhs, ns, DIM);
 
 	print_vec_real(p, np);
@@ -124,6 +132,7 @@ double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed)
 
 	printf("\n%+.15E : MEAN\n%+.15E : SD\n%+.15E : MAX_FABS\n", stat[0], stat[1], stat[2]);
 
+	free(diff);
 	free(zs);
 	free(zs_t);
 	free(zsp);
@@ -139,7 +148,8 @@ double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed)
 	free(wt);
 	free(ket);
 	free(ke);
-	free(diff);
+	free(ket_ct);
+	free(ke_ct);
 
 	return 0;
 }

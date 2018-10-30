@@ -12,6 +12,39 @@
 #define PREFAC (1 / (8 * PI * PI * PI))
 */
 
+void sph_ct_mom6(const double *ke, unsigned int dim, unsigned long ns, double *ke_ct)
+{
+	double dl, dlp, dl_dlp, P_dl, P_dlp, P, dl_z, P_x, P_z, dlp_x, dlp_y, dlp_z, phi_dlp;
+	unsigned long i;
+
+	for (i = 0; i < ns; i++) {
+		dl = ke[dim * i + 0];
+		dlp = ke[dim * i + 1];
+		P = ke[dim * i + 2];
+		dl_dlp = ke[dim * i + 3];
+		P_dl = ke[dim * i + 4];
+		P_dlp = ke[dim * i + 5];
+
+		phi_dlp = acos((cos(P_dlp) - cos(P_dl) * cos(dl_dlp)) / (sin(P_dl) * sin(dl_dlp)));
+
+		dl_z = dl;
+
+		dlp_x = dlp * cos(phi_dlp) * sin(dl_dlp);
+		dlp_y = dlp * sin(phi_dlp) * sin(dl_dlp);
+		dlp_z = dlp * cos(dl_dlp);
+
+		P_x = P * cos(0) * sin(P_dl);
+		P_z = P * cos(P_dl);
+
+		ke_ct[dim * i + 0] = dl_z;
+		ke_ct[dim * i + 1] = dlp_x;
+		ke_ct[dim * i + 2] = dlp_y;
+		ke_ct[dim * i + 3] = dlp_z;
+		ke_ct[dim * i + 4] = P_x;
+		ke_ct[dim * i + 5] = P_z;
+	}
+}
+
 double zs_contact(const double *ke, unsigned int dim, double kf, double g)
 {
 	double dl, dlp, P, dl_dlp, P_dl, P_dlp, P2, dl2, dl4, cos_P_dl, zs_ct, kf2, kf3, g2;
@@ -73,7 +106,7 @@ double zsp_contact(const double *ke, unsigned int dim, double kf, double g)
 }
 
 void get_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dlp,
-			double q, double th_q, double phi_q)
+			double q, double th_q, double phi_q, double kmax)
 {
 	double dl, dlp, P, dl_dlp, P_dl, P_dlp, P2, dlp2, dl2, cos_dl_dlp, cos_P_dl, cos_P_dlp, sin_dl_dlp,
 	    sin_P_dl, sin_P_dlp, Podl, Podlp, dlodlp, cos_th, sin_th, phi_P, Poq, dlpoq, dloq, dl_zs1,
@@ -122,10 +155,10 @@ void get_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double
 	for (i = 0; i < 3; i++) {
 
 		dlp_zs1_ct[i] = 0.5 * (P_ct[i] - q_ct[i] + dlp_ct[i]);
-		P_zs1_ct[i] = P_ct[i] + q_ct[i] + dlp_ct[i];
+		P_zs1_ct[i] = 0.5 * (P_ct[i] + q_ct[i] + dlp_ct[i]);
 
 		dlp_zs2_ct[i] = 0.5 * (-P_ct[i] + q_ct[i] + dlp_ct[i]);
-		P_zs2_ct[i] = P_ct[i] + q_ct[i] - dlp_ct[i];
+		P_zs2_ct[i] = 0.5 * (P_ct[i] + q_ct[i] - dlp_ct[i]);
 	}
 
 	for (i = 0; i < 3; i++) {
@@ -163,6 +196,77 @@ void get_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double
 	kl2[3] = acos(dl_dlp_zs2 / (dl_zs2 * dlp_zs2));
 	kl2[4] = acos(P_dl_zs2 / (P_zs2 * dl_zs2));
 	kl2[5] = acos(P_dlp_zs2 / (P_zs2 * dlp_zs2));
+}
+
+void get_zs_reg_limits(double kmax, const double *ke, double phi_dlp, double th_q, double phi_q, double *lims)
+{
+	double dl, dlp, P, dl_dlp, P_dl, P_dlp, q_ct[3], dlp_ct[3], P_ct[3], q_k1, q_k2, cos_q_k1, cos_q_k2,
+	    cos2_q_k1, cos2_q_k2, k1, k2, k1_ct[3], k2_ct[3], a1, b1, a2, b2, sin2_q_k2, sin2_q_k1, k1max,
+	    k2max, k12min;
+	unsigned int i;
+
+	dl = ke[0];
+	dlp = ke[1];
+	P = ke[2];
+	dl_dlp = ke[3];
+	P_dl = ke[4];
+	P_dlp = ke[5];
+
+	q_ct[0] = cos(phi_q) * sin(th_q);
+	q_ct[1] = sin(phi_q) * sin(th_q);
+	q_ct[2] = cos(th_q);
+
+	dlp_ct[0] = dlp * cos(phi_dlp) * sin(dl_dlp);
+	dlp_ct[1] = dlp * sin(phi_dlp) * sin(dl_dlp);
+	dlp_ct[2] = dlp * cos(dl_dlp);
+
+	P_ct[0] = P * cos(0) * sin(P_dl);
+	P_ct[1] = P * sin(0) * sin(P_dl);
+	P_ct[2] = P * cos(P_dl);
+
+	for (i = 0; i < 3; i++) {
+		k1_ct[i] = 0.5 * (P_ct[i] + dlp_ct[i]);
+		k2_ct[i] = 0.5 * (P_ct[i] - dlp_ct[i]);
+	}
+
+	k1 = 0;
+	k2 = 0;
+	for (i = 0; i < 3; i++) {
+		k1 += k1_ct[i] * k1_ct[i];
+		k2 += k2_ct[i] * k2_ct[i];
+	}
+
+	k1 = sqrt(k1);
+	k2 = sqrt(k2);
+
+	q_k1 = 0;
+	q_k2 = 0;
+	for (i = 0; i < 3; i++) {
+		q_k1 += k1_ct[i] * q_ct[i];
+		q_k2 += k2_ct[i] * q_ct[i];
+	}
+
+	cos_q_k1 = q_k1 / k1;
+	cos_q_k2 = q_k2 / k2;
+
+	cos2_q_k1 = cos_q_k1 * cos_q_k1;
+	cos2_q_k2 = cos_q_k2 * cos_q_k2;
+
+	a1 = fabs(k1 * cos_q_k1);
+	b1 = sqrt(2 * kmax * kmax - k1 * k1 * (2 - cos2_q_k1));
+
+	a2 = fabs(k2 * cos_q_k2);
+	b2 = sqrt(2 * kmax * kmax - k2 * k2 * (2 - cos2_q_k2));
+
+	k1max = (-a1 + b1);
+	k2max = (-a2 + b2);
+
+	k12min = (k1max < k2max) ? k1max : k2max;
+
+	printf("%+.15E %+.15E ", cos_q_k1, cos_q_k2);
+
+	lims[0] = 0;
+	lims[1] = k12min;
 }
 
 void get_zs_loop_mom(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dlp, double q,
@@ -590,7 +694,7 @@ int zs_flow(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, dou
 					e_q = -2 * q[l] * dl * cos_th;
 
 					get_zs_loop_mom_ct(kl1, kl2, dim, &ext_mom[dim * n], phi_dlp, q[l],
-							   th[j], phi[i]);
+							   th[j], phi[i], 2.9 * kf);
 
 					gma1[m] = vfun(kl1, dim, param);
 					gma2[m] = vfun(kl2, dim, param);
