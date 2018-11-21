@@ -11,12 +11,86 @@
 #define PI (3.1415926535897)
 #define DIM (6)
 
+double test_ph_phase_space_vol(double dl, double kf, double fac_th_brk, unsigned long nq, unsigned long nth,
+			       unsigned long nphi)
+{
+	double *gl_q, *wl_q, *gl_th, *wl_th, *gl_phi, *wl_phi, *qvec, *wt, vol, vol_full, vol_int, vol_exct,
+	    q, th, phi, d, *work;
+	unsigned long nl, i;
+
+	gl_q = malloc(nq * sizeof(double));
+	assert(gl_q);
+	wl_q = malloc(nq * sizeof(double));
+	assert(wl_q);
+
+	gl_th = malloc(nth * sizeof(double));
+	assert(gl_th);
+	wl_th = malloc(nth * sizeof(double));
+	assert(wl_th);
+
+	gl_phi = malloc(nphi * sizeof(double));
+	assert(gl_phi);
+	wl_phi = malloc(nphi * sizeof(double));
+	assert(wl_phi);
+
+	nl = nq * nth * nphi;
+
+	work = malloc(2 * nl * sizeof(double));
+	assert(work);
+
+	qvec = malloc(3 * nl * sizeof(double));
+	assert(qvec);
+	wt = malloc(nl * sizeof(double));
+	assert(wt);
+
+	gauss_grid_create(nq, gl_q, wl_q, -1, 1);
+	gauss_grid_create(nth / 4, gl_th, wl_th, -1, 1);
+	gauss_grid_create(nphi, gl_phi, wl_phi, -1, 1);
+
+	get_ph_phase_space(kf, dl, nq, nth, nphi, fac_th_brk, gl_q, wl_q, gl_th, wl_th, gl_phi, wl_phi, qvec,
+			   wt, work, 2 * nl);
+
+	vol = 0;
+	for (i = 0; i < nl; i++) {
+		q = qvec[3 * i + 0];
+		th = qvec[3 * i + 1];
+		phi = qvec[3 * i + 2];
+
+		vol += wt[i];
+	}
+
+	vol_full = 4 * (PI / 3) * kf * kf * kf;
+	d = 2 * dl;
+
+	if (dl < kf) {
+		vol_int = (1.0 / 12.0) * PI * (4 * kf + d) * (2 * kf - d) * (2 * kf - d);
+	} else {
+		vol_int = 0;
+	}
+
+	vol_exct = 2 * (vol_full - vol_int);
+
+	printf("%+.15E %+.15E\n", vol_exct, vol);
+
+	free(wl_phi);
+	free(gl_phi);
+	free(wl_th);
+	free(gl_th);
+	free(wl_q);
+	free(gl_q);
+	free(qvec);
+	free(wt);
+	free(work);
+
+	return fabs(vol_exct - vol);
+}
+
 double test_ph_phase_space(double dl, double kf, double fac, unsigned long nq, unsigned long nth,
 			   unsigned long nphi)
 {
 
 	double *gq1, *wq1, *wq, *q, *phi, *wphi, *th, *wth, dl2, Is, Ith, Iq, sgn, th_max, vol_full, vol_cres,
-	    vol_int, I_exact, a, b, q0, q1, cos_th, sin_th, pf_q, q2, d;
+	    vol_int, I_exact, a, b, q0, q1, cos_th, sin_th, pf_q, q2, d, q_min, q_max;
 	unsigned long i, j, l;
 
 	fprintf(stderr, "test_ph_phase_space(dl=%.1f) %s:%d\n", dl, __FILE__, __LINE__);
@@ -46,7 +120,7 @@ double test_ph_phase_space(double dl, double kf, double fac, unsigned long nq, u
 
 	if (dl < kf) {
 		gauss_grid_create(2 * nth, th, wth, 0, 0.5 * PI);
-		gauss_grid_create(2 * nth, &th[2 * nth], &wth[2 * nth], PI, 0.5 * PI);
+		gauss_grid_create(2 * nth, &th[2 * nth], &wth[2 * nth], 0.5 * PI, PI);
 		sgn = 1;
 	} else {
 		th_max = asin(kf / dl);
@@ -76,7 +150,10 @@ double test_ph_phase_space(double dl, double kf, double fac, unsigned long nq, u
 			q0 = sgn * (-a + b);
 			q1 = a + b;
 
-			gauss_grid_rescale(gq1, wq1, nq, q, wq, q0, q1);
+			q_min = (q0 < q1) ? q0 : q1;
+			q_max = (q0 > q1) ? q0 : q1;
+
+			gauss_grid_rescale(gq1, wq1, nq, q, wq, q_min, q_max);
 
 			Iq = 0;
 			for (l = 0; l < nq; l++) {

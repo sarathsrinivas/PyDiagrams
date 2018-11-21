@@ -21,7 +21,7 @@ int zs_flow_gpr(double *zs, double *ext_mom, unsigned long ns, unsigned int dim,
 
 	sgn = 1;
 
-	nm = 4 * nth * nphi * nq;
+	nm = nth * nphi * nq;
 
 	w = malloc(nm * sizeof(double));
 	assert(w);
@@ -53,9 +53,9 @@ int zs_flow_gpr(double *zs, double *ext_mom, unsigned long ns, unsigned int dim,
 	wq = malloc(nq * sizeof(double));
 	assert(wq);
 
-	th = malloc(4 * nth * sizeof(double));
+	th = malloc(nth * sizeof(double));
 	assert(th);
-	wth = malloc(4 * nth * sizeof(double));
+	wth = malloc(nth * sizeof(double));
 	assert(wth);
 
 	phi = malloc(nphi * sizeof(double));
@@ -93,10 +93,7 @@ int zs_flow_gpr(double *zs, double *ext_mom, unsigned long ns, unsigned int dim,
 			gauss_grid_rescale(gth1, wth1, nth, &th[3 * nth], &wth[3 * nth], 0.75 * PI, 0.5 * PI);
 			*/
 
-			gauss_grid_create(2 * nth, th, wth, 0, 0.5 * PI);
-			gauss_grid_create(2 * nth, &th[2 * nth], &wth[2 * nth], PI, 0.5 * PI);
-
-			sgn = 1;
+			gauss_grid_create(nth, th, wth, 0, PI);
 
 		} else if (dl > kf) {
 			th_max = asin(kf / dl);

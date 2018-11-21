@@ -6,10 +6,10 @@
 #include "lib_flow.h"
 
 #define PI (3.14159265358979)
-#define PREFAC (1)
 #define DIM (6)
-/*
 #define PREFAC (1 / (8 * PI * PI * PI))
+/*
+#define PREFAC (1)
 */
 
 void sph_ct_mom6(const double *ke, unsigned int dim, unsigned long ns, double *ke_ct)
@@ -67,7 +67,10 @@ double zs_contact(const double *ke, unsigned int dim, double kf, double g)
 	zs_ct = 0;
 
 	if (dl < kf) {
+		/*
 		zs_ct = -(16.0 / 3) * g2 * (P * dl4 - 3 * P * dl2 * kf2) * cos_P_dl;
+		*/
+		zs_ct = (8.0 / 3) * g2 * P * dl2 * cos_P_dl * (3 * kf2 - dl2);
 	} else if (dl > kf) {
 		zs_ct = (16.0 / 3) * g2 * kf3 * (2 * P * dl * cos_P_dl - dl2);
 	}
@@ -106,7 +109,7 @@ double zsp_contact(const double *ke, unsigned int dim, double kf, double g)
 }
 
 void get_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dlp,
-			double q, double th_q, double phi_q, double kmax)
+			double q, double th_q, double phi_q)
 {
 	double dl, dlp, P, dl_dlp, P_dl, P_dlp, P2, dlp2, dl2, cos_dl_dlp, cos_P_dl, cos_P_dlp, sin_dl_dlp,
 	    sin_P_dl, sin_P_dlp, Podl, Podlp, dlodlp, cos_th, sin_th, phi_P, Poq, dlpoq, dloq, dl_zs1,
@@ -583,124 +586,93 @@ int zs_flow(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, dou
 	    unsigned long nth, unsigned long nphi, double vfun(double *, unsigned int, double *),
 	    double *param, double fac)
 {
-	double dl, dl2, P_dl, dl_dlp, P_dlp, phi_dlp, e_ext, *q, *wq, *gth1, *wth1, *th, *wth, *phi, *wphi,
-	    *w, cos_th, sin_th, a, b, q0, q1, e_q, q2, *gma1, *gma2, kl1[DIM], kl2[DIM], pf_th, pf_phi, pf_q,
-	    *gq1, *wq1, sgn, th_max, wphi_i, wth_j;
-	unsigned long n, i, j, l, m, nm;
+	double dl, dl2, P_dl, dl_dlp, P, P_dlp, phi_dlp, e_ext, *q, *th, *wth, *phi, *wphi, cos_th, sin_th, a,
+	    b, q0, q1, eq, q2, *gma1, *gma2, kl1[DIM], kl2[DIM], pf_th, pf_phi, pf_q, *gq1, *wq, sgn, th_max,
+	    wphi_i, wth_j, q_min, q_max, *work, *wt, *qvec, *efac, vol_ph;
+	unsigned long n, i, j, l, k, m, nm, nth1;
 
 	sgn = 1;
 
-	nm = 4 * nth * nphi * nq;
-
-	w = malloc(nm * sizeof(double));
-	assert(w);
-
-	gma1 = malloc(nm * sizeof(double));
-	assert(gma1);
-
-	gma2 = malloc(nm * sizeof(double));
-	assert(gma2);
-
-	gq1 = malloc(nq * sizeof(double));
-	assert(gq1);
-	wq1 = malloc(nq * sizeof(double));
-	assert(wq1);
-
-	gth1 = malloc(nth * sizeof(double));
-	assert(gth1);
-	wth1 = malloc(nth * sizeof(double));
-	assert(wth1);
+	nm = nth * nphi * nq;
+	assert(nth % 4 == 0);
+	nth1 = nth / 4;
 
 	q = malloc(nq * sizeof(double));
 	assert(q);
 	wq = malloc(nq * sizeof(double));
 	assert(wq);
-
-	th = malloc(4 * nth * sizeof(double));
-	assert(th);
-	wth = malloc(4 * nth * sizeof(double));
-	assert(wth);
-
 	phi = malloc(nphi * sizeof(double));
 	assert(phi);
 	wphi = malloc(nphi * sizeof(double));
 	assert(wphi);
+	th = malloc(nth * sizeof(double));
+	assert(th);
+	wth = malloc(nth * sizeof(double));
+	assert(wth);
+
+	wt = malloc(nm * sizeof(double));
+	assert(wt);
+	gma1 = malloc(nm * sizeof(double));
+	assert(gma1);
+	gma2 = malloc(nm * sizeof(double));
+	assert(gma2);
 
 	gauss_grid_create(nphi, phi, wphi, 0, 2 * PI);
-
-	gauss_grid_create(nth, gth1, wth1, -1, 1);
-	gauss_grid_create(nq, gq1, wq1, -1, 1);
 
 	for (n = 0; n < ns; n++) {
 
 		dl = ext_mom[dim * n + 0];
+		P = ext_mom[dim * n + 2];
 		dl_dlp = ext_mom[dim * n + 3];
 		P_dl = ext_mom[dim * n + 4];
 		P_dlp = ext_mom[dim * n + 5];
 
-		if (dl < kf) {
-
-			/*
-			gauss_grid_rescale(gth1, wth1, nth, th, wth, 0, 0.25 * PI);
-			gauss_grid_rescale(gth1, wth1, nth, &th[nth], &wth[nth], 0.25 * PI, 0.5 * PI);
-			gauss_grid_rescale(gth1, wth1, nth, &th[2 * nth], &wth[2 * nth], PI, 0.75 * PI);
-			gauss_grid_rescale(gth1, wth1, nth, &th[3 * nth], &wth[3 * nth], 0.75 * PI, 0.5 * PI);
-			*/
-
-			gauss_grid_create(2 * nth, th, wth, 0, 0.5 * PI);
-			gauss_grid_create(2 * nth, &th[2 * nth], &wth[2 * nth], PI, 0.5 * PI);
-
-			sgn = 1;
-
-		} else if (dl > kf) {
-			th_max = asin(kf / dl);
-
-			gauss_grid_rescale(gth1, wth1, nth, th, wth, 0, fac * th_max);
-			gauss_grid_rescale(gth1, wth1, nth, &th[nth], &wth[nth], fac * th_max, th_max);
-			gauss_grid_rescale(gth1, wth1, nth, &th[2 * nth], &wth[2 * nth], PI - th_max,
-					   PI - fac * th_max);
-			gauss_grid_rescale(gth1, wth1, nth, &th[3 * nth], &wth[3 * nth], PI - fac * th_max,
-					   PI);
-
-			sgn = -1;
-		}
-
 		dl2 = dl * dl;
-
 		phi_dlp = acos((cos(P_dlp) - cos(P_dl) * cos(dl_dlp)) / (sin(P_dl) * sin(dl_dlp)));
 
 		e_ext = get_zs_energy(&ext_mom[dim * n], dim);
 
+		if (dl < kf) {
+			th_max = PI;
+			gauss_grid_create(nth, th, wth, 0, th_max);
+		} else {
+			th_max = asin(kf / dl);
+			gauss_grid_create(nth1, th, wth, 0, fac * th_max);
+			gauss_grid_create(nth1, &th[nth1], &wth[nth1], fac * th_max, th_max);
+			gauss_grid_create(nth1, &th[2 * nth1], &wth[2 * nth1], PI - th_max,
+					  PI - fac * th_max);
+			gauss_grid_create(nth1, &th[3 * nth1], &wth[3 * nth1], PI - fac * th_max, PI);
+		}
+
+		vol_ph = 0;
 		m = 0;
 		for (i = 0; i < nphi; i++) {
-			wphi_i = wphi[i];
-			for (j = 0; j < 4 * nth; j++) {
-				wth_j = wth[j];
-				cos_th = cos(th[j]);
-				sin_th = sin(th[j]);
+			for (j = 0; j < nth; j++) {
 
-				a = dl * cos_th;
-				b = sqrt(kf * kf - dl2 * sin_th * sin_th);
+				a = (dl * cos(th[j]));
+				b = sqrt(kf * kf - dl2 * sin(th[j]) * sin(th[j]));
 
-				q0 = sgn * (-a + b);
-				q1 = a + b;
+				q0 = fabs(-a + b);
+				q1 = fabs(a + b);
 
-				gauss_grid_rescale(gq1, wq1, nq, q, wq, q0, q1);
+				gauss_grid_create(nq, q, wq, q0, q1);
 
-				for (l = 0; l < nq; l++) {
+				for (k = 0; k < nq; k++) {
 
-					q2 = q[l] * q[l];
+					q2 = q[k] * q[k];
 
-					e_q = -2 * q[l] * dl * cos_th;
+					/*
+					eq = -4 * dl * q[k] * cos(th[j]) + 4 * dl * cos(P_dl);
+					*/
+					eq = -2 * q[k] * dl * cos(th[j]);
 
-					get_zs_loop_mom_ct(kl1, kl2, dim, &ext_mom[dim * n], phi_dlp, q[l],
-							   th[j], phi[i], 2.9 * kf);
+					get_zs_loop_mom_ct(kl1, kl2, dim, &ext_mom[dim * n], phi_dlp, q[k],
+							   th[j], phi[i], 0);
 
 					gma1[m] = vfun(kl1, dim, param);
 					gma2[m] = vfun(kl2, dim, param);
 
-					w[m] = wq[l] * wphi_i * wth_j * sin_th * q2 * 2 * (e_q + e_ext);
-
+					wt[m] = 2 * (eq + e_ext) * q2 * sin(th[j]) * wq[k] * wth[j] * wphi[i];
 					m++;
 				}
 			}
@@ -708,9 +680,8 @@ int zs_flow(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, dou
 
 		zs[n] = 0;
 		for (m = 0; m < nm; m++) {
-			zs[n] += w[m] * gma1[m] * gma2[m];
+			zs[n] += wt[m] * gma1[m] * gma2[m];
 		}
-
 		zs[n] *= PREFAC;
 	}
 
@@ -720,17 +691,129 @@ int zs_flow(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, dou
 	free(th);
 	free(wq);
 	free(q);
-	free(wth1);
-	free(gth1);
-	free(wq1);
-	free(gq1);
-	free(gma2);
+	free(wt);
 	free(gma1);
-	free(w);
+	free(gma2);
 
 	return 0;
 }
 
+int zsp_flow(double *zsp, double *ext_mom, unsigned long ns, unsigned int dim, double kf, unsigned long nq,
+	     unsigned long nth, unsigned long nphi, double vfun(double *, unsigned int, double *),
+	     double *param, double fac)
+{
+	double dlp, dlp2, P_dl, dl_dlp, P, P_dlp, phi_dl, e_ext, *q, *th, *wth, *phi, *wphi, cos_th, sin_th,
+	    a, b, q0, q1, eq, q2, *gma1, *gma2, kl1[DIM], kl2[DIM], pf_th, pf_phi, pf_q, *gq1, *wq, sgn,
+	    th_max, wphi_i, wth_j, q_min, q_max, *work, *wt, *qvec, *efac, vol_ph;
+	unsigned long n, i, j, l, k, m, nm, nth1;
+
+	sgn = 1;
+
+	nm = nth * nphi * nq;
+	assert(nth % 4 == 0);
+	nth1 = nth / 4;
+
+	q = malloc(nq * sizeof(double));
+	assert(q);
+	wq = malloc(nq * sizeof(double));
+	assert(wq);
+	phi = malloc(nphi * sizeof(double));
+	assert(phi);
+	wphi = malloc(nphi * sizeof(double));
+	assert(wphi);
+	th = malloc(nth * sizeof(double));
+	assert(th);
+	wth = malloc(nth * sizeof(double));
+	assert(wth);
+
+	wt = malloc(nm * sizeof(double));
+	assert(wt);
+	gma1 = malloc(nm * sizeof(double));
+	assert(gma1);
+	gma2 = malloc(nm * sizeof(double));
+	assert(gma2);
+
+	gauss_grid_create(nphi, phi, wphi, 0, 2 * PI);
+
+	for (n = 0; n < ns; n++) {
+
+		dlp = ext_mom[dim * n + 1];
+		P = ext_mom[dim * n + 2];
+		dl_dlp = ext_mom[dim * n + 3];
+		P_dl = ext_mom[dim * n + 4];
+		P_dlp = ext_mom[dim * n + 5];
+
+		dlp2 = dlp * dlp;
+		phi_dl = acos((cos(P_dl) - cos(P_dlp) * cos(dl_dlp)) / (sin(P_dlp) * sin(dl_dlp)));
+
+		e_ext = get_zsp_energy(&ext_mom[dim * n], dim);
+
+		if (dlp < kf) {
+			th_max = PI;
+			gauss_grid_create(nth, th, wth, 0, th_max);
+		} else {
+			th_max = asin(kf / dlp);
+			gauss_grid_create(nth1, th, wth, 0, fac * th_max);
+			gauss_grid_create(nth1, &th[nth1], &wth[nth1], fac * th_max, th_max);
+			gauss_grid_create(nth1, &th[2 * nth1], &wth[2 * nth1], PI - th_max,
+					  PI - fac * th_max);
+			gauss_grid_create(nth1, &th[3 * nth1], &wth[3 * nth1], PI - fac * th_max, PI);
+		}
+
+		vol_ph = 0;
+		m = 0;
+		for (i = 0; i < nphi; i++) {
+			for (j = 0; j < nth; j++) {
+
+				a = (dlp * cos(th[j]));
+				b = sqrt(kf * kf - dlp2 * sin(th[j]) * sin(th[j]));
+
+				q0 = fabs(-a + b);
+				q1 = fabs(a + b);
+
+				gauss_grid_create(nq, q, wq, q0, q1);
+
+				for (k = 0; k < nq; k++) {
+
+					q2 = q[k] * q[k];
+
+					/*
+					eq = -4 * dl * q[k] * cos(th[j]) + 4 * dl * cos(P_dl);
+					*/
+					eq = -2 * q[k] * dlp * cos(th[j]);
+
+					get_zsp_loop_mom_ct(kl1, kl2, dim, &ext_mom[dim * n], phi_dl, q[k],
+							    th[j], phi[i]);
+
+					gma1[m] = vfun(kl1, dim, param);
+					gma2[m] = vfun(kl2, dim, param);
+					wt[m] = 2 * (eq + e_ext) * q2 * sin(th[j]) * wq[k] * wth[j] * wphi[i];
+					m++;
+				}
+			}
+		}
+
+		zsp[n] = 0;
+		for (m = 0; m < nm; m++) {
+			zsp[n] += wt[m] * gma1[m] * gma2[m];
+		}
+		zsp[n] *= PREFAC;
+	}
+
+	free(wphi);
+	free(phi);
+	free(wth);
+	free(th);
+	free(wq);
+	free(q);
+	free(wt);
+	free(gma1);
+	free(gma2);
+
+	return 0;
+}
+
+/*
 int zsp_flow(double *zsp, double *ext_mom, unsigned long ns, unsigned int dim, double kf, unsigned long nq,
 	     unsigned long nth, unsigned long nphi, double vfun(double *, unsigned int, double *),
 	     double *param, double fac)
@@ -742,7 +825,7 @@ int zsp_flow(double *zsp, double *ext_mom, unsigned long ns, unsigned int dim, d
 
 	sgn = 1;
 
-	nm = 4 * nth * nphi * nq;
+	nm = nth * nphi * nq;
 
 	w = malloc(nm * sizeof(double));
 	assert(w);
@@ -877,3 +960,4 @@ int zsp_flow(double *zsp, double *ext_mom, unsigned long ns, unsigned int dim, d
 
 	return 0;
 }
+*/
