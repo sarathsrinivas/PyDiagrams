@@ -824,7 +824,7 @@ double test_mom_closure(double kmax, unsigned long ns, int seed)
 				limsgn = Q1 - Q0;
 				q = Q0 + (Q1 - Q0) * dsfmt_genrand_close_open(&drng);
 
-				get_zs_loop_mom_ct(kl1, kl2, DIM, &ke[DIM * i], phi_dlp, q, th_q, phi_q, 0);
+				get_zs_loop_mom_ct(kl1, kl2, DIM, &ke[DIM * i], phi_dlp, q, th_q, phi_q);
 
 				printf("%+.15E %+.15E %+.15E %+.15E\n", kl1[1], kl1[2], kl2[1], kl2[2]);
 			}
