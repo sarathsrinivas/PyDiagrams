@@ -39,5 +39,3 @@ double test_convergence(unsigned long ns, double kf, int seed);
 double test_mom_closure(double kmax, unsigned long ns, int seed);
 /* GPR TESTS */
 double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed);
-double err_fun(double x);
-double err_fun_quad(double x, unsigned int ng);
