@@ -137,8 +137,7 @@ int zs_flow_gpr(double *zs, double *ext_mom, unsigned long ns, unsigned int dim,
 					e_q = -2 * q[l] * dl * cos_th;
 
 					get_zs_loop_mom_ct(&kl1[DIM * m], &kl2[DIM * m], dim,
-							   &ext_mom[n * dim], phi_dlp, q[l], th[j], phi[i],
-							   2.9 * kf);
+							   &ext_mom[n * dim], phi_dlp, q[l], th[j], phi[i]);
 
 					w[m] = wq[l] * wphi_i * wth_j * sin_th * q2 * 2 * (e_q + e_ext);
 
