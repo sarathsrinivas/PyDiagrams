@@ -10,6 +10,7 @@ void get_zs_loop_mom(double *kl1, double *kl2, unsigned int dim, const double *k
 void get_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dlp, double q, double q_th, double q_phi);
 void get_zsp_loop_mom(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dl, double q, double q_th, double q_phi);
 void get_zsp_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dl, double q, double q_th, double q_phi);
+void fill_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, double *ke, double *qvec, unsigned long nq);
 double get_zs_energy(const double *ke, unsigned int dim);
 double get_zsp_energy(const double *ke, unsigned int dim);
 void sph_ct_mom6(const double *ke, unsigned int dim, unsigned long ns, double *ke_ct);

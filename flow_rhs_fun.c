@@ -201,6 +201,26 @@ void get_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double
 	kl2[5] = acos(P_dlp_zs2 / (P_zs2 * dlp_zs2));
 }
 
+void fill_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, double *ke, double *qvec,
+			 unsigned long nq)
+{
+	unsigned long i;
+	double q, q_th, q_phi, phi_dlp, P_dlp, P_dl, dl_dlp;
+
+	dl_dlp = ke[3];
+	P_dl = ke[4];
+	P_dlp = ke[5];
+
+	phi_dlp = acos((cos(P_dlp) - cos(P_dl) * cos(dl_dlp)) / (sin(P_dl) * sin(dl_dlp)));
+
+	for (i = 0; i < nq; i++) {
+		q = qvec[3 * i + 0];
+		q_th = qvec[3 * i + 1];
+		q_phi = qvec[3 * i + 2];
+		get_zs_loop_mom_ct(&kl1[dim * i], &kl2[dim * i], dim, ke, phi_dlp, q, q_th, q_phi);
+	}
+}
+
 void get_zs_reg_limits(double kmax, const double *ke, double phi_dlp, double th_q, double phi_q, double *lims)
 {
 	double dl, dlp, P, dl_dlp, P_dl, P_dlp, q_ct[3], dlp_ct[3], P_ct[3], q_k1, q_k2, cos_q_k1, cos_q_k2,
