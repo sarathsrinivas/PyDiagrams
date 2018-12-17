@@ -88,9 +88,9 @@ double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed)
 
 	fac = 0.96;
 
-	ret = zs_flow(zs, ke, ns, DIM, kf, nq, nth, nphi, v_exp, NULL, fac);
+	ret = zs_flow(zs, ke, ns, DIM, kf, nq, nth, nphi, &v_exp, NULL, fac);
 	ret = zsp_flow(zsp, ke, ns, DIM, kf, nq, nth, nphi, v_exp, NULL, fac);
-	ret = zs_flow(zs_t, ket, nt, DIM, kf, nq, nth, nphi, v_exp, NULL, fac);
+	ret = zs_flow(zs_t, ket, nt, DIM, kf, nq, nth, nphi, &v_exp, NULL, fac);
 	ret = zsp_flow(zsp_t, ket, nt, DIM, kf, nq, nth, nphi, v_exp, NULL, fac);
 
 	for (i = 0; i < np; i++) {
