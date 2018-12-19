@@ -7,6 +7,49 @@
 
 #define PI (3.14159265358979)
 
+void get_zs_th_grid(double *th, double *wth, double *qmin, double *qmax, unsigned long nth, const double *gth,
+		    const double *gwth, double dl, double kf, double fac)
+{
+	double th_max, th_brk, a, b, kf2, dl2, sin_th, cos_th;
+	unsigned long i, nth1;
+
+	assert(nth % 4 == 0 && "nth should be multiple of 4.");
+	nth1 = nth / 4;
+
+	if (dl < kf) {
+		th_max = PI;
+
+		gauss_grid_rescale(gth, gwth, nth1, th, wth, 0, 0.25 * th_max);
+		gauss_grid_rescale(gth, gwth, nth1, &th[nth1], &wth[nth1], 0.25 * th_max, 0.5 * th_max);
+		gauss_grid_rescale(gth, gwth, nth1, &th[2 * nth1], &wth[2 * nth1], 0.5 * th_max,
+				   0.75 * th_max);
+		gauss_grid_rescale(gth, gwth, nth1, &th[3 * nth1], &wth[3 * nth1], 0.75 * th_max, th_max);
+
+	} else {
+		th_max = asin(kf / dl);
+		th_brk = fac * th_max;
+
+		gauss_grid_rescale(gth, gwth, nth1, th, wth, 0, th_brk);
+		gauss_grid_rescale(gth, gwth, nth1, &th[nth1], &wth[nth1], th_brk, th_max);
+		gauss_grid_rescale(gth, gwth, nth1, &th[2 * nth1], &wth[2 * nth1], PI - th_max, PI - th_brk);
+		gauss_grid_rescale(gth, gwth, nth1, &th[3 * nth1], &wth[3 * nth1], PI - th_brk, PI);
+	}
+
+	kf2 = kf * kf;
+	dl2 = dl * dl;
+
+	for (i = 0; i < nth; i++) {
+		cos_th = cos(th[i]);
+		sin_th = sin(th[i]);
+
+		a = dl * cos_th;
+		b = sqrt(kf2 - dl2 * sin_th * sin_th);
+
+		qmin[i] = fabs(-a + b);
+		qmax[i] = fabs(a + b);
+	}
+}
+
 double fd(double x, double a, double eps)
 {
 	double reg;
