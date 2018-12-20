@@ -7,11 +7,11 @@
 
 #define PI (3.1415926535897)
 
-void get_I2q(double *I2q, const double *xq, unsigned long nq, unsigned int dim, double q0, double q1,
-	     double lq)
+void get_I2q(double *I2q, const double *xq, unsigned long nq, unsigned int dim, double *q0, double *q1,
+	     unsigned long nth, double lq)
 {
 	double lq2, sqrt_pi, qi, exp_q1, exp_q0, Erf_q1, Erf_q0, qi2;
-	unsigned long i;
+	unsigned long i, j;
 
 	lq2 = lq * lq;
 	sqrt_pi = sqrt(PI);
@@ -21,44 +21,52 @@ void get_I2q(double *I2q, const double *xq, unsigned long nq, unsigned int dim, 
 		qi = xq[dim * i + 0];
 		qi2 = qi * qi;
 
-		exp_q1 = exp(-(q1 - qi) * (q1 - qi) / lq2);
-		exp_q0 = exp(-(q0 - qi) * (q0 - qi) / lq2);
+		for (j = 0; j < nth; j++) {
 
-		Erf_q1 = Erf((q1 - qi) / lq);
-		Erf_q0 = Erf((q0 - qi) / lq);
+			exp_q1 = exp(-(q1[j] - qi) * (q1[j] - qi) / lq2);
+			exp_q0 = exp(-(q0[j] - qi) * (q0[j] - qi) / lq2);
 
-		I2q[i] = -0.5 * lq2 * ((qi + q1) * exp_q1 - (qi + q0) * exp_q0)
-			 + 0.25 * sqrt_pi * lq * (lq2 + 2 * qi2) * (Erf_q1 - Erf_q0);
+			Erf_q1 = Erf((q1[j] - qi) / lq);
+			Erf_q0 = Erf((q0[j] - qi) / lq);
+
+			I2q[i * nth + j] = -0.5 * lq2 * ((qi + q1[j]) * exp_q1 - (qi + q0[j]) * exp_q0)
+					   + 0.25 * sqrt_pi * lq * (lq2 + 2 * qi2) * (Erf_q1 - Erf_q0);
+		}
 	}
 }
 
-void get_I3q(double *I3q, const double *xq, unsigned long nq, unsigned int dim, double q0, double q1,
-	     double lq)
+void get_I3q(double *I3q, const double *xq, unsigned long nq, unsigned int dim, double *q0, double *q1,
+	     unsigned long nth, double lq)
 {
 	double lq2, sqrt_pi, qi, exp_q1, exp_q0, Erf_q1, Erf_q0, qi2, q02, q12, tq0, tq1;
-	unsigned long i;
+	unsigned long i, j;
 
 	lq2 = lq * lq;
 	sqrt_pi = sqrt(PI);
-	q02 = q0 * q0;
-	q12 = q1 * q1;
 
 	for (i = 0; i < nq; i++) {
 
 		qi = xq[dim * i + 0];
 		qi2 = qi * qi;
 
-		exp_q1 = exp(-(q1 - qi) * (q1 - qi) / lq2);
-		exp_q0 = exp(-(q0 - qi) * (q0 - qi) / lq2);
+		for (j = 0; j < nth; j++) {
 
-		Erf_q1 = Erf((q1 - qi) / lq);
-		Erf_q0 = Erf((q0 - qi) / lq);
+			q02 = q0[j] * q0[j];
+			q12 = q1[j] * q1[j];
 
-		tq0 = lq2 + q02 + q0 * qi + qi2;
-		tq1 = lq2 + q12 + q1 * qi + qi2;
+			exp_q1 = exp(-(q1[j] - qi) * (q1[j] - qi) / lq2);
+			exp_q0 = exp(-(q0[j] - qi) * (q0[j] - qi) / lq2);
 
-		I3q[i] = -0.5 * lq2 * (tq1 * exp_q1 - tq0 * exp_q0)
-			 + 0.25 * sqrt_pi * lq * qi * (3 * lq2 + 2 * qi2) * (Erf_q1 - Erf_q0);
+			Erf_q1 = Erf((q1[j] - qi) / lq);
+			Erf_q0 = Erf((q0[j] - qi) / lq);
+
+			tq0 = lq2 + q02 + q0[j] * qi + qi2;
+			tq1 = lq2 + q12 + q1[j] * qi + qi2;
+
+			I3q[i * nth + j]
+			    = -0.5 * lq2 * (tq1 * exp_q1 - tq0 * exp_q0)
+			      + 0.25 * sqrt_pi * lq * qi * (3 * lq2 + 2 * qi2) * (Erf_q1 - Erf_q0);
+		}
 	}
 }
 
@@ -93,8 +101,8 @@ void get_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l, u
 
 double test_get_I2q(unsigned int tn, double q0, double q1, double lq)
 {
-	double *q, *I2q_exct, *I2q, *qg, *wt, err_norm, diff;
-	unsigned long i, j, ng;
+	double *q, *I2q_exct, *I2q, *qg, *wt, err_norm, diff, qmin[1], qmax[1];
+	unsigned long i, j, ng, nth;
 
 	q = malloc(tn * sizeof(double));
 	assert(q);
@@ -107,7 +115,11 @@ double test_get_I2q(unsigned int tn, double q0, double q1, double lq)
 		q[i] = 3.0 * rand() / (1.0 + RAND_MAX);
 	}
 
-	get_I2q(I2q, q, tn, 1, q0, q1, lq);
+	nth = 1;
+	qmin[0] = q0;
+	qmax[0] = q1;
+
+	get_I2q(I2q, q, tn, 1, qmin, qmax, nth, lq);
 
 	ng = 20;
 	qg = malloc(ng * sizeof(double));
@@ -145,8 +157,8 @@ double test_get_I2q(unsigned int tn, double q0, double q1, double lq)
 
 double test_get_I3q(unsigned int tn, double q0, double q1, double lq)
 {
-	double *q, *I3q_exct, *I3q, *qg, *wt, err_norm, diff;
-	unsigned long i, j, ng;
+	double *q, *I3q_exct, *I3q, *qg, *wt, err_norm, diff, qmin[1], qmax[1];
+	unsigned long i, j, ng, nth;
 
 	q = malloc(tn * sizeof(double));
 	assert(q);
@@ -159,7 +171,11 @@ double test_get_I3q(unsigned int tn, double q0, double q1, double lq)
 		q[i] = 3.0 * rand() / (1.0 + RAND_MAX);
 	}
 
-	get_I3q(I3q, q, tn, 1, q0, q1, lq);
+	nth = 1;
+	qmin[0] = q0;
+	qmax[0] = q1;
+
+	get_I3q(I3q, q, tn, 1, qmin, qmax, nth, lq);
 
 	ng = 20;
 	qg = malloc(ng * sizeof(double));

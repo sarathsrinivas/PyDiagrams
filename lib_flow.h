@@ -43,8 +43,8 @@ double test_mom_closure(double kmax, unsigned long ns, int seed);
 double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed);
 /* FLOW F(q) */
 double Erf(double x);
-void get_I2q(double *I2q, const double *xq, unsigned long nq, unsigned int dim, double q0, double q1, double lq);
-void get_I3q(double *I2q, const double *xq, unsigned long nq, unsigned int dim, double q0, double q1, double lq);
+void get_I2q(double *I2q, const double *xq, unsigned long nq, unsigned int dim, double *q0, double *q1, unsigned long nth, double lq);
+void get_I3q(double *I3q, const double *xq, unsigned long nq, unsigned int dim, double *q0, double *q1, unsigned long nth, double lq);
 void get_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l, unsigned int dim, const double *e_ext, const double *th_max, unsigned long nke);
 double test_get_I2q(unsigned int tn, double q0, double q1, double lq);
 double test_get_I3q(unsigned int tn, double q0, double q1, double lq);
