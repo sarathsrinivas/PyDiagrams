@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
-#include "../lib_quadrature/lib_quadrature.h"
-#include "../lib_arr/lib_arr.h"
-#include "../lib_rng/lib_rng.h"
-#include "../lib_pots/lib_pots.h"
-#include "../lib_gpr/lib_gpr.h"
-#include "../lib_flow/lib_flow.h"
+#include <lib_quadrature/lib_quadrature.h>
+#include <lib_arr/lib_arr.h>
+#include <lib_rng/lib_rng.h>
+#include <lib_pots/lib_pots.h>
+#include <lib_gpr/lib_gpr.h>
+#include "lib_flow.h"
 
 #define PI (3.1415926535897)
 #define DIM (6)

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
-#include "../lib_quadrature/lib_quadrature.h"
+#include <lib_quadrature/lib_quadrature.h>
 #include "lib_flow.h"
 
 #define PI (3.1415926535897)

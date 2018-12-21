@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
-#include "../lib_quadrature/lib_quadrature.h"
-#include "../lib_gpr/lib_gpr.h"
+#include <lib_quadrature/lib_quadrature.h>
+#include <lib_gpr/lib_gpr.h>
 #include "lib_flow.h"
 
 #define PI (3.14159265358979)
