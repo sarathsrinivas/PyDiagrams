@@ -46,5 +46,8 @@ double Erf(double x);
 void get_I2q(double *I2q, const double *xq, unsigned long nq, unsigned int dim, double *q0, double *q1, unsigned long nth, double lq);
 void get_I3q(double *I3q, const double *xq, unsigned long nq, unsigned int dim, double *q0, double *q1, unsigned long nth, double lq);
 void get_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l, unsigned int dim, const double *e_ext, const double *th_max, unsigned long nke);
+void get_zs_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l, unsigned int dimq, const double *ke, unsigned long nke, unsigned int dimke, unsigned long nth, double fac
+		, double kf);
+void predict_zs_fq(double *zs, unsigned long nke, const double *wq, unsigned long nq, const double *Ifq);
 double test_get_I2q(unsigned int tn, double q0, double q1, double lq);
 double test_get_I3q(unsigned int tn, double q0, double q1, double lq);

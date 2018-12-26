@@ -6,6 +6,9 @@
 #include "lib_flow.h"
 
 #define PI (3.1415926535897)
+#define PREFAC (1 / (8 * PI * PI * PI))
+
+extern double ddot_(const int *N, const double *X, const int *incx, const double *Y, const int *incy);
 
 void get_I2q(double *I2q, const double *xq, unsigned long nq, unsigned int dim, double *q0, double *q1,
 	     unsigned long nth, double lq)
@@ -70,18 +73,37 @@ void get_I3q(double *I3q, const double *xq, unsigned long nq, unsigned int dim, 
 	}
 }
 
-void get_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l, unsigned int dim,
-	     const double *e_ext, const double *th_max, unsigned long nke)
+void get_zs_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l, unsigned int dimq,
+		const double *ke, unsigned long nke, unsigned int dimke, unsigned long nth, double fac,
+		double kf)
 {
-	double *I_phi, *I2q, *I3q, sqrt_pi, phi_qi, lq, lth, lphi;
-	unsigned long i;
+	double *I_phi, *I2q, *I3q, sqrt_pi, phi_qi, lq, lth, lphi, *gth, *gwth, *th, *wth, exp_th_kj, *q0,
+	    *q1, e_ext, dl, diff_th_kj, tmp, thj, I3_jk, I2_jk;
+	unsigned long i, j, k, nth1;
+
+	assert(nth % 4 == 0);
+	nth1 = nth / 4;
 
 	I_phi = malloc(nq * sizeof(double));
 	assert(I_phi);
-	I2q = malloc(nq * sizeof(double));
+	I2q = malloc(nq * nth * sizeof(double));
 	assert(I2q);
-	I3q = malloc(nq * sizeof(double));
+	I3q = malloc(nq * nth * sizeof(double));
 	assert(I3q);
+	gth = malloc(nth1 * sizeof(double));
+	assert(gth);
+	gwth = malloc(nth1 * sizeof(double));
+	assert(gwth);
+	th = malloc(nth * sizeof(double));
+	assert(th);
+	wth = malloc(nth * sizeof(double));
+	assert(wth);
+	q0 = malloc(nth * sizeof(double));
+	assert(q0);
+	q1 = malloc(nth * sizeof(double));
+	assert(q1);
+
+	gauss_grid_create(nth1, gth, gwth, -1, 1);
 
 	sqrt_pi = sqrt(PI);
 
@@ -90,13 +112,64 @@ void get_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l, u
 	lphi = l[2];
 
 	for (i = 0; i < nq; i++) {
-		phi_qi = xq[dim * i + 2];
+		phi_qi = xq[dimq * i + 2];
 		I_phi[i] = 0.5 * sqrt_pi * lphi * (Erf(2.0 * PI - phi_qi) - Erf(0 - phi_qi));
+	}
+
+	for (i = 0; i < nke; i++) {
+		e_ext = get_zs_energy(&ke[dimke * i], dimke);
+		dl = ke[dimke * i + 0];
+
+		get_zs_th_grid(th, wth, q0, q1, nth, gth, gwth, dl, kf, fac);
+
+		get_I2q(I2q, xq, nq, dimq, q0, q1, nth, lq);
+		get_I3q(I3q, xq, nq, dimq, q0, q1, nth, lq);
+
+		for (j = 0; j < nq; j++) {
+
+			thj = xq[dimq * j + 0];
+
+			tmp = 0;
+			for (k = 0; k < nth; k++) {
+
+				diff_th_kj = (th[k] - thj) / lth;
+				exp_th_kj = exp(-diff_th_kj * diff_th_kj);
+
+				I3_jk = I3q[j * nth + k];
+				I2_jk = I2q[j * nth + k];
+
+				tmp += wth[k] * sin(th[k]) * exp_th_kj
+				       * (-4 * cos(th[k]) * I3_jk + e_ext * I2_jk);
+			}
+
+			Ifq[i * nq + j] = PREFAC * I_phi[j] * tmp;
+		}
 	}
 
 	free(I_phi);
 	free(I2q);
 	free(I3q);
+	free(q0);
+	free(q1);
+	free(th);
+	free(wth);
+	free(gth);
+	free(gwth);
+}
+
+void predict_zs_fq(double *zs, unsigned long nke, const double *wq, unsigned long nq, const double *Ifq)
+{
+	int N, INCX, INCY;
+	unsigned long i;
+
+	N = nq;
+	INCX = 1;
+	INCY = 1;
+
+	for (i = 0; i < nke; i++) {
+
+		zs[i] = ddot_(&N, &wq[i * nq], &INCX, &Ifq[i * nq], &INCY);
+	}
 }
 
 double test_get_I2q(unsigned int tn, double q0, double q1, double lq)
