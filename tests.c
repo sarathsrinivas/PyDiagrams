@@ -10,7 +10,7 @@
 
 #define PI (3.1415926535897)
 #define DIM (6)
-
+/*
 double test_ph_phase_space_vol(double dl, double kf, double fac_th_brk, unsigned long nq, unsigned long nth,
 			       unsigned long nphi)
 {
@@ -84,6 +84,7 @@ double test_ph_phase_space_vol(double dl, double kf, double fac_th_brk, unsigned
 
 	return fabs(vol_exct - vol);
 }
+*/
 
 double test_ph_phase_space(double dl, double kf, double fac, unsigned long nq, unsigned long nth,
 			   unsigned long nphi)
