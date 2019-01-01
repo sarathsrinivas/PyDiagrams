@@ -103,7 +103,7 @@ void get_ph_space_grid(double *xq, double *wxq, unsigned int dimq, double dl, do
 				xq[dimq * m + 1] = th[j];
 				xq[dimq * m + 2] = phi[i];
 
-				wxq[m] = wq[k];
+				wxq[m] = wq[k] * wth[j] * wphi[i];
 
 				m++;
 			}
