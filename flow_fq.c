@@ -7,6 +7,7 @@
 
 #define PI (3.1415926535897)
 #define PREFAC (1 / (8 * PI * PI * PI))
+#define DIMKE (6)
 
 extern double ddot_(const int *N, const double *X, const int *incx, const double *Y, const int *incy);
 
@@ -282,6 +283,60 @@ double test_get_I3q(unsigned int tn, double q0, double q1, double lq)
 	free(wt);
 
 	return err_norm;
+}
+
+void get_zs_num(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, double kf, unsigned long nq,
+		unsigned long nth, unsigned long nphi, double (*vfun)(double *, unsigned int, double *),
+		double *param)
+{
+	double *xq, *wxq, ph_vol, q, th, phi, e_ext, kl1[DIMKE], kl2[DIMKE], v1, v2, tmp, eq, P, P_dl, dlp,
+	    dl_dlp, dl, P_dlp, phi_dlp;
+	unsigned long nxq, i, n;
+	unsigned int dimq;
+
+	nxq = nq * nth * nphi;
+	dimq = 3;
+
+	xq = malloc(dimq * nxq * sizeof(double));
+	assert(xq);
+	wxq = malloc(nxq * sizeof(double));
+	assert(wxq);
+
+	for (n = 0; n < ns; n++) {
+
+		dl = ext_mom[dim * n + 0];
+		P = ext_mom[dim * n + 2];
+		dl_dlp = ext_mom[dim * n + 3];
+		P_dl = ext_mom[dim * n + 4];
+		P_dlp = ext_mom[dim * n + 5];
+
+		get_ph_space_grid(xq, wxq, dimq, dl, kf, nq, nth, nphi);
+
+		phi_dlp = acos((cos(P_dlp) - cos(P_dl) * cos(dl_dlp)) / (sin(P_dl) * sin(dl_dlp)));
+
+		e_ext = get_zs_energy(&ext_mom[dim * n], dim);
+
+		tmp = 0;
+		for (i = 0; i < nxq; i++) {
+
+			q = xq[dimq * i + 0];
+			th = xq[dimq * i + 1];
+			phi = xq[dimq * i + 2];
+
+			eq = -4 * q * dl * cos(th) + e_ext;
+			get_zs_loop_mom_ct(kl1, kl2, dim, &ext_mom[dim * n], phi_dlp, q, th, phi);
+
+			v1 = (*vfun)(kl1, dim, param);
+			v2 = (*vfun)(kl2, dim, param);
+
+			tmp += wxq[i] * q * q * sin(th) * eq * v1 * v2;
+		}
+
+		zs[n] = PREFAC * tmp;
+	}
+
+	free(xq);
+	free(wxq);
 }
 
 int get_zs_Ifq_num(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, double kf,
