@@ -50,10 +50,11 @@ void get_zs_th_grid(double *th, double *wth, double *qmin, double *qmax, unsigne
 	}
 }
 
-double get_ph_space_vol(double dl, double kf, unsigned long nq, unsigned long nth, unsigned long nphi)
+void get_ph_space_grid(double *xq, double *wxq, unsigned int dimq, double dl, double kf, unsigned long nq,
+		       unsigned long nth, unsigned long nphi)
 {
 	double *q, *wq, *gq, *gwq, ph_vol, fac, *th, *wth, *gth, *gwth, *phi, *wphi, *q0, *q1;
-	unsigned long i, j, k, nth1;
+	unsigned long i, j, k, nth1, m;
 
 	assert(nth % 4 == 0);
 	nth1 = nth / 4;
@@ -90,7 +91,7 @@ double get_ph_space_vol(double dl, double kf, unsigned long nq, unsigned long nt
 	fac = 0.96;
 	get_zs_th_grid(th, wth, q0, q1, nth, gth, gwth, dl, kf, fac);
 
-	ph_vol = 0;
+	m = 0;
 	for (i = 0; i < nphi; i++) {
 		for (j = 0; j < nth; j++) {
 
@@ -98,7 +99,13 @@ double get_ph_space_vol(double dl, double kf, unsigned long nq, unsigned long nt
 
 			for (k = 0; k < nq; k++) {
 
-				ph_vol += q[k] * q[k] * wq[k] * sin(th[j]) * wth[j] * wphi[i];
+				xq[dimq * m + 0] = q[k];
+				xq[dimq * m + 1] = th[j];
+				xq[dimq * m + 2] = phi[i];
+
+				wxq[m] = wq[k];
+
+				m++;
 			}
 		}
 	}
@@ -115,6 +122,35 @@ double get_ph_space_vol(double dl, double kf, unsigned long nq, unsigned long nt
 	free(gwth);
 	free(q0);
 	free(q1);
+}
+
+double get_ph_space_vol(double dl, double kf, unsigned long nq, unsigned long nth, unsigned long nphi)
+{
+	double *xq, *wxq, ph_vol, q, th, phi;
+	unsigned long nxq, i;
+	unsigned int dimq;
+
+	nxq = nq * nth * nphi;
+	dimq = 3;
+
+	xq = malloc(dimq * nxq * sizeof(double));
+	assert(xq);
+	wxq = malloc(nxq * sizeof(double));
+	assert(wxq);
+
+	get_ph_space_grid(xq, wxq, dimq, dl, kf, nq, nth, nphi);
+
+	ph_vol = 0;
+	for (i = 0; i < nxq; i++) {
+		q = xq[dimq * i + 0];
+		th = xq[dimq * i + 1];
+		phi = xq[dimq * i + 2];
+
+		ph_vol += q * q * sin(th) * wxq[i];
+	}
+
+	free(xq);
+	free(wxq);
 
 	return ph_vol;
 }
