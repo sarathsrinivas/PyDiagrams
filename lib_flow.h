@@ -17,6 +17,7 @@ void sph_ct_mom6(const double *ke, unsigned int dim, unsigned long ns, double *k
 void get_zs_reg_limits(double kmax, const double *ke, double phi_dlp, double th_q, double phi_q,  double *lims);
 /* Phase Spaces */
 void get_zs_th_grid(double *th, double *wth, double *qmin, double *qmax, unsigned long nth, const double *gth, const double *gwth, double dl, double kf, double fac);
+void get_ph_space_grid(double *xq, double *wxq, unsigned int dimq, double dl, double kf, unsigned long nq, unsigned long nth, unsigned long nphi);
 double get_ph_space_vol(double dl, double kf, unsigned long nq, unsigned long nth, unsigned long nphi);
 double get_ph_space_vol_fd(double dl, double kf, unsigned long nq, unsigned long nth, unsigned long nphi);
 double get_ph_vol_exct(double dl, double kf);
@@ -50,3 +51,6 @@ int get_zs_Ifq_num(double *zs, double *ext_mom, unsigned long ns, unsigned int d
 void predict_zs_fq(double *zs, unsigned long nke, const double *wq, unsigned long nq, const double *Ifq);
 double test_get_I2q(unsigned int tn, double q0, double q1, double lq);
 double test_get_I3q(unsigned int tn, double q0, double q1, double lq);
+void get_zs_num(double *zs, double *ke, unsigned long ns, unsigned int dim, double kf, unsigned long nq,
+		unsigned long nth, unsigned long nphi, double (*vfun)(double *, unsigned int, double *),
+		double *param, double fac);
