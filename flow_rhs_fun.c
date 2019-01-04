@@ -602,9 +602,9 @@ double get_zsp_energy(const double *ke, unsigned int dim)
 	return e_ext;
 }
 
-int zs_flow(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, double kf, unsigned long nq,
-	    unsigned long nth, unsigned long nphi, double (*vfun)(double *, unsigned int, double *),
-	    double *param, double fac)
+void zs_flow(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, double kf, unsigned long nq,
+	     unsigned long nth, unsigned long nphi, double (*vfun)(double *, unsigned int, double *),
+	     double *param, double fac)
 {
 	double dl, dl2, P_dl, dl_dlp, P, P_dlp, phi_dlp, e_ext, *q, *th, *wth, *phi, *wphi, cos_th, sin_th, a,
 	    b, q0, q1, eq, q2, *gma1, *gma2, kl1[DIM], kl2[DIM], pf_th, pf_phi, pf_q, *gq1, *wq, sgn, th_max,
@@ -684,7 +684,7 @@ int zs_flow(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, dou
 					/*
 					eq = -4 * dl * q[k] * cos(th[j]) + 4 * dl * cos(P_dl);
 					*/
-					eq = -2 * q[k] * dl * cos(th[j]);
+					eq = -4 * q[k] * dl * cos(th[j]) + e_ext;
 
 					get_zs_loop_mom_ct(kl1, kl2, dim, &ext_mom[dim * n], phi_dlp, q[k],
 							   th[j], phi[i]);
@@ -692,7 +692,7 @@ int zs_flow(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, dou
 					gma1[m] = (*vfun)(kl1, dim, param);
 					gma2[m] = (*vfun)(kl2, dim, param);
 
-					wt[m] = 2 * (eq + e_ext) * q2 * sin(th[j]) * wq[k] * wth[j] * wphi[i];
+					wt[m] = eq * q2 * sin(th[j]) * wq[k] * wth[j] * wphi[i];
 					m++;
 				}
 			}
@@ -714,8 +714,6 @@ int zs_flow(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, dou
 	free(wt);
 	free(gma1);
 	free(gma2);
-
-	return 0;
 }
 
 int zsp_flow(double *zsp, double *ext_mom, unsigned long ns, unsigned int dim, double kf, unsigned long nq,

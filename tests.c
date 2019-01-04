@@ -231,7 +231,7 @@ double test_zs_contact(int isdl_kf, double kf, unsigned long ns, unsigned long n
 
 	fac = 0.96;
 
-	ret = zs_flow(zs, ke, ns, DIM, kf, nq, nth, nphi, &v_contact, NULL, fac);
+	zs_flow(zs, ke, ns, DIM, kf, nq, nth, nphi, &v_contact, NULL, fac);
 
 	g = 0.5;
 
@@ -641,8 +641,8 @@ double test_antisymmetry(double kf, unsigned long ns, unsigned long nq, unsigned
 
 	fac = 0.96;
 
-	ret = zs_flow(zs, ke, ns, DIM, kf, nq, nth, nphi, &v_yukawa, NULL, fac);
-	ret = zsp_flow(zsp, ke, ns, DIM, kf, nq, nth, nphi, v_yukawa, NULL, fac);
+	zs_flow(zs, ke, ns, DIM, kf, nq, nth, nphi, &v_yukawa, NULL, fac);
+	zsp_flow(zsp, ke, ns, DIM, kf, nq, nth, nphi, v_yukawa, NULL, fac);
 
 	for (i = 0; i < ns; i++) {
 		rhs_dir[i] = zs[i] - zsp[i];
@@ -660,8 +660,8 @@ double test_antisymmetry(double kf, unsigned long ns, unsigned long nq, unsigned
 		ke[DIM * i + 5] = tmp;
 	}
 
-	ret = zs_flow(zs, ke, ns, DIM, kf, nq, nth, nphi, &v_yukawa, NULL, fac);
-	ret = zsp_flow(zsp, ke, ns, DIM, kf, nq, nth, nphi, v_yukawa, NULL, fac);
+	zs_flow(zs, ke, ns, DIM, kf, nq, nth, nphi, &v_yukawa, NULL, fac);
+	zsp_flow(zsp, ke, ns, DIM, kf, nq, nth, nphi, v_yukawa, NULL, fac);
 
 	for (i = 0; i < ns; i++) {
 		rhs_exch[i] = zs[i] - zsp[i];
@@ -738,11 +738,11 @@ double test_convergence(unsigned long ns, double kf, int seed)
 
 	fac = 0.96;
 
-	ret = zs_flow(zs, ke, ns, DIM, kf, nq[0], nth[0], nphi[0], &v_exp, NULL, fac);
-	ret = zsp_flow(zsp, ke, ns, DIM, kf, nq[0], nth[0], nphi[0], v_exp, NULL, fac);
+	zs_flow(zs, ke, ns, DIM, kf, nq[0], nth[0], nphi[0], &v_exp, NULL, fac);
+	zsp_flow(zsp, ke, ns, DIM, kf, nq[0], nth[0], nphi[0], v_exp, NULL, fac);
 
-	ret = zs_flow(zs1, ke, ns, DIM, kf, nq[1], nth[1], nphi[1], &v_exp, NULL, fac);
-	ret = zsp_flow(zsp1, ke, ns, DIM, kf, nq[1], nth[1], nphi[1], v_exp, NULL, fac);
+	zs_flow(zs1, ke, ns, DIM, kf, nq[1], nth[1], nphi[1], &v_exp, NULL, fac);
+	zsp_flow(zsp1, ke, ns, DIM, kf, nq[1], nth[1], nphi[1], v_exp, NULL, fac);
 
 	for (i = 0; i < ns; i++) {
 		rhs = zs[i] - zsp[i];
