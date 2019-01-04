@@ -140,7 +140,7 @@ void get_zs_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l
 				I2_jk = I2q[j * nth + k];
 
 				tmp += wth[k] * sin(th[k]) * exp_th_kj
-				       * (-4 * cos(th[k]) * I3_jk + e_ext * I2_jk);
+				       * (-4 * dl * cos(th[k]) * I3_jk + e_ext * I2_jk);
 			}
 
 			Ifq[i * nq + j] = PREFAC * I_phi[j] * tmp;
@@ -339,114 +339,54 @@ void get_zs_num(double *zs, double *ext_mom, unsigned long ns, unsigned int dim,
 	free(wxq);
 }
 
-int get_zs_Ifq_num(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, double kf,
-		   unsigned long nq, unsigned long nth, unsigned long nphi, double *qi, double *pq,
-		   double fac)
+void get_zs_Ifq_num(double *Ifq_num, double *ke, unsigned long nke, unsigned int dimke, double kf,
+		    unsigned long nq, unsigned long nth, unsigned long nphi, double *xqi, unsigned long nxqi,
+		    unsigned int dimq, double *pq, double fac)
 {
-	double dl, dl2, P_dl, dl_dlp, P, P_dlp, phi_dlp, e_ext, *q, *th, *wth, *phi, *wphi, cos_th, sin_th, a,
-	    b, q0, q1, eq, q2, *gma1, *gma2, pf_th, pf_phi, pf_q, *gq1, *wq, sgn, th_max, wphi_i, wth_j,
-	    q_min, q_max, *work, *wt, *qvec, *efac, vol_ph;
-	unsigned long n, i, j, l, k, m, nm, nth1;
+	double *xq, *wxq, dl, qexp, q, th_q, phi_q, qi, th_qi, phi_qi, tmp, eq, e_ext;
+	unsigned int nxq, i, j, k;
 
-	sgn = 1;
+	nxq = nth * nq * nphi;
 
-	nm = nth * nphi * nq;
-	assert(nth % 4 == 0);
-	nth1 = nth / 4;
+	xq = malloc(dimq * nxq * sizeof(double));
+	assert(xq);
+	wxq = malloc(nxq * sizeof(double));
+	assert(wxq);
 
-	q = malloc(nq * sizeof(double));
-	assert(q);
-	wq = malloc(nq * sizeof(double));
-	assert(wq);
-	phi = malloc(nphi * sizeof(double));
-	assert(phi);
-	wphi = malloc(nphi * sizeof(double));
-	assert(wphi);
-	th = malloc(nth * sizeof(double));
-	assert(th);
-	wth = malloc(nth * sizeof(double));
-	assert(wth);
+	for (i = 0; i < nke; i++) {
 
-	wt = malloc(nm * sizeof(double));
-	assert(wt);
-	gma1 = malloc(nm * sizeof(double));
-	assert(gma1);
+		dl = ke[dimke * i + 0];
 
-	gauss_grid_create(nphi, phi, wphi, 0, 2 * PI);
+		get_ph_space_grid(xq, wxq, dimq, dl, kf, nq, nth, nphi);
 
-	for (n = 0; n < ns; n++) {
+		e_ext = get_zs_energy(&ke[dimke * i], dimke);
 
-		dl = ext_mom[dim * n + 0];
-		P = ext_mom[dim * n + 2];
-		dl_dlp = ext_mom[dim * n + 3];
-		P_dl = ext_mom[dim * n + 4];
-		P_dlp = ext_mom[dim * n + 5];
+		for (j = 0; j < nxqi; j++) {
 
-		dl2 = dl * dl;
-		phi_dlp = acos((cos(P_dlp) - cos(P_dl) * cos(dl_dlp)) / (sin(P_dl) * sin(dl_dlp)));
+			qi = xqi[dimq * j + 0];
+			th_qi = xqi[dimq * j + 1];
+			phi_qi = xqi[dimq * j + 2];
 
-		e_ext = get_zs_energy(&ext_mom[dim * n], dim);
+			tmp = 0;
+			for (k = 0; k < nxq; k++) {
 
-		if (dl < kf) {
-			th_max = PI;
-			gauss_grid_create(nth, th, wth, 0, th_max);
-		} else {
-			th_max = asin(kf / dl);
-			gauss_grid_create(nth1, th, wth, 0, fac * th_max);
-			gauss_grid_create(nth1, &th[nth1], &wth[nth1], fac * th_max, th_max);
-			gauss_grid_create(nth1, &th[2 * nth1], &wth[2 * nth1], PI - th_max,
-					  PI - fac * th_max);
-			gauss_grid_create(nth1, &th[3 * nth1], &wth[3 * nth1], PI - fac * th_max, PI);
-		}
+				q = xq[dimq * k + 0];
+				th_q = xq[dimq * k + 1];
+				phi_q = xq[dimq * k + 2];
 
-		vol_ph = 0;
-		m = 0;
-		for (i = 0; i < nphi; i++) {
-			for (j = 0; j < nth; j++) {
+				eq = -4 * dl * q * cos(th_q) + e_ext;
 
-				a = (dl * cos(th[j]));
-				b = sqrt(kf * kf - dl2 * sin(th[j]) * sin(th[j]));
+				qexp = exp(-(qi - q) * (qi - q) / pq[0])
+				       * exp(-(th_qi - th_q) * (th_qi - th_q) / pq[1])
+				       * exp(-(phi_qi - phi_q) * (phi_qi - phi_q) / pq[2]);
 
-				q0 = fabs(-a + b);
-				q1 = fabs(a + b);
-
-				gauss_grid_create(nq, q, wq, q0, q1);
-
-				for (k = 0; k < nq; k++) {
-
-					q2 = q[k] * q[k];
-
-					/*
-					eq = -4 * dl * q[k] * cos(th[j]) + 4 * dl * cos(P_dl);
-					*/
-					eq = -2 * q[k] * dl * cos(th[j]);
-
-					gma1[m]
-					    = exp(-(q[k] - qi[0]) * (q[k] - qi[0]) / (pq[0] * pq[0]))
-					      * exp(-(th[j] - qi[1]) * (th[j] - qi[1]) / (pq[1] * pq[1]))
-					      * exp(-(phi[i] - qi[2]) * (phi[i] - qi[2]) / (pq[2] * pq[2]));
-
-					wt[m] = 2 * (eq + e_ext) * q2 * sin(th[j]) * wq[k] * wth[j] * wphi[i];
-					m++;
-				}
+				tmp += q * q * sin(th_q) * wxq[k] * eq * qexp;
 			}
-		}
 
-		zs[n] = 0;
-		for (m = 0; m < nm; m++) {
-			zs[n] += wt[m] * gma1[m];
+			Ifq_num[i * nxqi + j] = PREFAC * tmp;
 		}
-		zs[n] *= PREFAC;
 	}
 
-	free(wphi);
-	free(phi);
-	free(wth);
-	free(th);
-	free(wq);
-	free(q);
-	free(wt);
-	free(gma1);
-
-	return 0;
+	free(xq);
+	free(wxq);
 }
