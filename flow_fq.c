@@ -3,9 +3,13 @@
 #include <assert.h>
 #include <math.h>
 #include <lib_quadrature/lib_quadrature.h>
+#include <lib_gpr/lib_gpr.h>
 #include "lib_flow.h"
 
 #define PI (3.1415926535897)
+/*
+#define PREFAC (1)
+*/
 #define PREFAC (1 / (8 * PI * PI * PI))
 #define DIMKE (6)
 
@@ -343,7 +347,7 @@ void get_zs_Ifq_num(double *Ifq_num, double *ke, unsigned long nke, unsigned int
 		    unsigned long nq, unsigned long nth, unsigned long nphi, double *xqi, unsigned long nxqi,
 		    unsigned int dimq, double *pq, double fac)
 {
-	double *xq, *wxq, dl, qexp, q, th_q, phi_q, qi, th_qi, phi_qi, tmp, eq, e_ext;
+	double *xq, *wxq, dl, *qkrn, q, th_q, phi_q, qi, th_qi, phi_qi, tmp, eq, e_ext;
 	unsigned int nxq, i, j, k;
 
 	nxq = nth * nq * nphi;
@@ -352,12 +356,16 @@ void get_zs_Ifq_num(double *Ifq_num, double *ke, unsigned long nke, unsigned int
 	assert(xq);
 	wxq = malloc(nxq * sizeof(double));
 	assert(wxq);
+	qkrn = malloc(nxq * nxqi * sizeof(double));
+	assert(qkrn);
 
 	for (i = 0; i < nke; i++) {
 
 		dl = ke[dimke * i + 0];
 
 		get_ph_space_grid(xq, wxq, dimq, dl, kf, nq, nth, nphi);
+
+		get_krn_se_ard(qkrn, xqi, xq, nxqi, nxq, dimq, pq, dimq);
 
 		e_ext = get_zs_energy(&ke[dimke * i], dimke);
 
@@ -376,11 +384,7 @@ void get_zs_Ifq_num(double *Ifq_num, double *ke, unsigned long nke, unsigned int
 
 				eq = -4 * dl * q * cos(th_q) + e_ext;
 
-				qexp = exp(-(qi - q) * (qi - q) / pq[0])
-				       * exp(-(th_qi - th_q) * (th_qi - th_q) / pq[1])
-				       * exp(-(phi_qi - phi_q) * (phi_qi - phi_q) / pq[2]);
-
-				tmp += q * q * sin(th_q) * wxq[k] * eq * qexp;
+				tmp += q * q * sin(th_q) * wxq[k] * eq * qkrn[j * nxq + k];
 			}
 
 			Ifq_num[i * nxqi + j] = PREFAC * tmp;

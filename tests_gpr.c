@@ -114,8 +114,7 @@ double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed)
 
 	get_krn_se_ard(krxx, ke, ke, ns, ns, DIM, p, np);
 
-	info = get_gpr_weights(wt, lkrxx, krxx, ns, DIM, rhs);
-	assert(info == 0);
+	get_gpr_weights(wt, lkrxx, krxx, ns, DIM, rhs);
 
 	get_krn_se_ard(krpx, ket, ke, nt, ns, DIM, p, np);
 
