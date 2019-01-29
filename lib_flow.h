@@ -38,9 +38,11 @@ double test_get_zsp_loop_mom(unsigned long ns, double kf, int seed);
 double test_antisymmetry(double kf, unsigned long ns, unsigned long nq, unsigned long nth, unsigned long nphi, int seed);
 double test_convergence(unsigned long ns, double kf, int seed);
 double test_mom_closure(double kmax, unsigned long ns, int seed);
+
 /* GPR TESTS */
 double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed);
-/* FLOW F(q) */
+
+/* FLOW F(Q) */
 double Erf(double x);
 void get_I2q(double *I2q, const double *xq, unsigned long nq, unsigned int dim, double *q0, double *q1, unsigned long nth, double lq);
 void get_I3q(double *I3q, const double *xq, unsigned long nq, unsigned int dim, double *q0, double *q1, unsigned long nth, double lq);
@@ -53,5 +55,16 @@ void get_zs_Ifq_num(double *Ifq_num, double *ke, unsigned long nke, unsigned int
 		    unsigned long nq, unsigned long nth, unsigned long nphi, double *xqi, unsigned long nxqi, \
 		    unsigned int dimq, double *pq, double fac);
 void predict_zs_fq(double *zs, unsigned long nke, const double *wq, unsigned long nq, const double *Ifq);
-double test_get_I2q(unsigned int tn, double q0, double q1, double lq);
-double test_get_I3q(unsigned int tn, double q0, double q1, double lq);
+
+/* TESTS FOR FLOW F(Q) */
+double test_get_I2q(unsigned int nqi, double q0, double q1, double lq);
+double test_get_I3q(unsigned int nqi, double q0, double q1, double lq);
+double test_Ifq(unsigned long nke, unsigned long nqi, unsigned long nth, double fac, double kmax, double kf, int seed);
+
+/* FLOW F(Q) VARIANCE FUNCTIONS */
+void get_I22(double *I22, const double *qmin, const double *qmax, unsigned long nth, double lq);
+void get_I23(double *I23, const double *qmin, const double *qmax, unsigned long nth, double lq);
+void get_I33(double *I33, const double *qmin, const double *qmax, unsigned long nth, double lq);
+
+/* TESTS FOR FLOW F(Q) VARIANCE */
+double test_Imn(double qmin, double qmax, unsigned long nq);
