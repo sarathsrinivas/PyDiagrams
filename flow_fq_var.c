@@ -9,101 +9,70 @@
 
 #define PI (3.1415926535897)
 
-void get_I23(double *I23, const double *qmin, const double *qmax, unsigned long nth, double lq)
+double get_I22(double q0, double q1, double qi0, double qi1, double lq)
 {
-	double q0, q1, q02, q12, q03, q13, q04, q14, q05, q15, q06, q16, l, l2, l3, l4, expq, erfq, expqi, t1,
-	    t2, t21, t22, sqpi;
-	unsigned long i;
+	double I22, q02, q03, q04, q05, q12, q13, q14, q15, l, l2, l3, l4, l5, l6, qi02, qi03, qi04, qi05,
+	    qi12, qi13, qi14, qi15, sqpi, qdiff00, qdiff01, qdiff10, qdiff11;
+
+	sqpi = sqrt(PI);
 
 	l = lq;
 	l2 = l * l;
 	l3 = l2 * l;
 	l4 = l3 * l;
-	sqpi = sqrt(PI);
 
-	for (i = 0; i < nth; i++) {
+	q02 = q0 * q0;
+	q03 = q02 * q0;
+	q04 = q03 * q0;
+	q05 = q04 * q0;
 
-		q0 = qmin[i];
-		q1 = qmax[i];
+	q12 = q1 * q1;
+	q13 = q12 * q1;
+	q14 = q13 * q1;
+	q15 = q14 * q1;
 
-		q02 = q0 * q0;
-		q12 = q1 * q1;
-		q03 = q02 * q0;
-		q13 = q12 * q1;
-		q04 = q03 * q0;
-		q14 = q13 * q1;
-		q05 = q04 * q0;
-		q15 = q14 * q1;
-		q06 = q05 * q0;
-		q16 = q15 * q1;
+	qi02 = qi0 * qi0;
+	qi03 = qi02 * qi0;
+	qi04 = qi03 * qi0;
+	qi05 = qi04 * qi0;
 
-		expq = exp(-(q0 - q1) * (q0 - q1) / l2);
-		expqi = 1.0 / expq;
-		erfq = Erf((q0 - q1) / l);
+	qi12 = qi1 * qi1;
+	qi13 = qi12 * qi1;
+	qi14 = qi13 * qi1;
+	qi15 = qi14 * qi1;
 
-		t1 = 8 * l * (q03 + q13) * (l2 + q02 + q0 * q1 + q12);
+	qdiff00 = (q0 - qi0) * (q0 - qi0);
+	qdiff01 = (q0 - qi1) * (q0 - qi1);
+	qdiff10 = (q1 - qi0) * (q1 - qi0);
+	qdiff11 = (q1 - qi1) * (q1 - qi1);
 
-		t21 = sqpi * (3 * l2 * (q14 - q04) - 2 * q06 + 2 * q16) * erfq;
+	I22 = (l
+	       * (2 * l
+		      * ((-l4 - l2 * qdiff00 - 3 * (q04 + q03 * qi0 + q02 * qi02 + q0 * qi03 + qi04))
+			     * exp(-qdiff00 / l2)
+			 + (l4 + l2 * qdiff10 + 3 * (q14 + q13 * qi0 + q12 * qi02 + q1 * qi03 + qi04))
+			       * exp(-qdiff10 / l2)
+			 + (l4 + l2 * qdiff01 + 3 * (q04 + q03 * qi1 + q02 * qi12 + q0 * qi13 + qi14))
+			       * exp(-qdiff01 / l2)
+			 + (-l4 - l2 * qdiff11 - 3 * (q14 + q13 * qi1 + q12 * qi12 + q1 * qi13 + qi14))
+			       * exp(-qdiff11 / l2))
+		  + sqpi * (-6 * q05 + 6 * qi05 + 5 * l2 * (-q03 + qi03)) * Erf((q0 - qi0) / l)
+		  + sqpi * (5 * l2 * (q13 - qi03) + 6 * (q15 - qi05)) * Erf((q1 - qi0) / l)
+		  + sqpi
+			* ((5 * l2 * (q03 - qi13) + 6 * (q05 - qi15)) * Erf((q0 - qi1) / l)
+			   + qi13 * (5 * l2 + 6 * qi12) * Erf((q1 - qi1) / l)
+			   + q13 * (5 * l2 + 6 * q12) * Erf((-q1 + qi1) / l))))
+	      / 60.0;
 
-		t22 = 2 * l * (l2 * (q03 + q13) + 3 * (q05 + q15));
-
-		t2 = -4 * expqi * (t21 + t22);
-
-		I23[i] = (1.0 / 48.0) * l * expq * (t1 + t2);
-	}
+	return I22;
 }
 
-void get_I22(double *I22, const double *qmin, const double *qmax, unsigned long nth, double lq)
+double get_I23(double q0, double q1, double qi0, double qi1, double lq)
 {
-	double q0, q1, q02, q12, q03, q13, q04, q14, q05, q15, q06, q16, l, l2, l3, l4, expq, erfq, expqi, t1,
-	    t11, t12, t2, t21, t22, sqpi;
-	unsigned long i;
+	double I23, q02, q03, q04, q05, q06, q12, q13, q14, q15, q16, l, l2, l4, l3, l5, l6, qi02, qi03, qi04,
+	    qi05, qi06, qi12, qi13, qi14, qi15, qi16, sqpi, qdiff00, qdiff01, qdiff10, qdiff11;
 
-	l = lq;
-	l2 = l * l;
-	l3 = l2 * l;
-	l4 = l3 * l;
 	sqpi = sqrt(PI);
-
-	for (i = 0; i < nth; i++) {
-
-		q0 = qmin[i];
-		q1 = qmax[i];
-
-		q02 = q0 * q0;
-		q12 = q1 * q1;
-		q03 = q02 * q0;
-		q13 = q12 * q1;
-		q04 = q03 * q0;
-		q14 = q13 * q1;
-		q05 = q04 * q0;
-		q15 = q14 * q1;
-		q06 = q05 * q0;
-		q16 = q15 * q1;
-
-		expq = exp(-(q0 - q1) * (q0 - q1) / l2);
-		expqi = 1.0 / expq;
-		erfq = Erf((q0 - q1) / l);
-
-		t11 = 3 * (q04 + q03 * q1 + q02 * q12 + q0 * q13 + q14);
-
-		t1 = 2 * l * (l4 + l2 * (q0 - q1) * (q0 - q1) + t11);
-
-		t21 = sqpi * (5 * l2 * (q13 - q03) - 6 * q05 + 6 * q15) * erfq;
-
-		t22 = l * (2 * l4 + 15 * (q04 + q14));
-
-		t2 = -1 * expqi * (t21 + t22);
-
-		I22[i] = (1.0 / 30.0) * l * expq * (t1 + t2);
-	}
-}
-
-void get_I33(double *I33, const double *qmin, const double *qmax, unsigned long nth, double lq)
-{
-	double q0, q1, q02, q12, q03, q13, q04, q14, q05, q15, q06, q16, q07, q17, l, l2, l3, l4, l5, l6,
-	    expq, erfq, expqi, t1, t11, t12, t2, t21, t22, t23, sqpi;
-	unsigned long i;
 
 	l = lq;
 	l2 = l * l;
@@ -111,100 +80,205 @@ void get_I33(double *I33, const double *qmin, const double *qmax, unsigned long 
 	l4 = l3 * l;
 	l5 = l4 * l;
 	l6 = l5 * l;
-	sqpi = sqrt(PI);
 
-	for (i = 0; i < nth; i++) {
+	q02 = q0 * q0;
+	q03 = q02 * q0;
+	q04 = q03 * q0;
+	q05 = q04 * q0;
+	q06 = q05 * q0;
 
-		q0 = qmin[i];
-		q1 = qmax[i];
+	q12 = q1 * q1;
+	q13 = q12 * q1;
+	q14 = q13 * q1;
+	q15 = q14 * q1;
+	q16 = q15 * q1;
 
-		q02 = q0 * q0;
-		q12 = q1 * q1;
-		q03 = q02 * q0;
-		q13 = q12 * q1;
-		q04 = q03 * q0;
-		q14 = q13 * q1;
-		q05 = q04 * q0;
-		q15 = q14 * q1;
-		q06 = q05 * q0;
-		q16 = q15 * q1;
-		q07 = q06 * q0;
-		q17 = q16 * q1;
+	qi02 = qi0 * qi0;
+	qi03 = qi02 * qi0;
+	qi04 = qi03 * qi0;
+	qi05 = qi04 * qi0;
+	qi06 = qi05 * qi0;
 
-		expq = exp(-(q0 - q1) * (q0 - q1) / l2);
-		expqi = 1.0 / expq;
-		erfq = Erf((q0 - q1) / l);
+	qi12 = qi1 * qi1;
+	qi13 = qi12 * qi1;
+	qi14 = qi13 * qi1;
+	qi15 = qi14 * qi1;
+	qi16 = qi15 * qi1;
 
-		t11 = 2 * sqpi * (21 * l2 * (q05 - q15) + 10 * (q07 - q17)) * erfq;
+	qdiff00 = (q0 - qi0) * (q0 - qi0);
+	qdiff01 = (q0 - qi1) * (q0 - qi1);
+	qdiff10 = (q1 - qi0) * (q1 - qi0);
+	qdiff11 = (q1 - qi1) * (q1 - qi1);
 
-		t12 = l * (6 * l6 - 35 * l2 * (q04 + q14) - 70 * (q06 + q16));
+	I23 = (l
+	       * ((-2 * l
+		   * (3 * l4 * (q0 - qi0) + 2 * l2 * (q03 - 3 * q02 * qi0 + 3 * q0 * qi02 + 7 * qi03)
+		      + 8 * (q05 + q04 * qi0 + q03 * qi02 + q02 * qi03 + q0 * qi04 + qi05)))
+		      * exp(-qdiff00 / l2)
+		  + (2 * l
+		     * (3 * l4 * (q1 - qi0) + 2 * l2 * (q13 - 3 * q12 * qi0 + 3 * q1 * qi02 + 7 * qi03)
+			+ 8 * (q15 + q14 * qi0 + q13 * qi02 + q12 * qi03 + q1 * qi04 + qi05)))
+			* exp(-qdiff10 / l2)
+		  + (2 * l
+		     * (3 * l4 * (q0 - qi1) + 2 * l2 * (q03 - 3 * q02 * qi1 + 3 * q0 * qi12 + 7 * qi13)
+			+ 8 * (q05 + q04 * qi1 + q03 * qi12 + q02 * qi13 + q0 * qi14 + qi15)))
+			* exp(-qdiff01 / l2)
+		  - (2 * l
+		     * (3 * l4 * (q1 - qi1) + 2 * l2 * (q13 - 3 * q12 * qi1 + 3 * q1 * qi12 + 7 * qi13)
+			+ 8 * (q15 + q14 * qi1 + q13 * qi12 + q12 * qi13 + q1 * qi14 + qi15)))
+			* exp(-qdiff11 / l2)
+		  + sqpi * (3 * l6 - 12 * l2 * (q04 - 3 * qi04) + 16 * (-q06 + qi06)) * Erf((q0 - qi0) / l)
+		  + sqpi * (-3 * l6 + 12 * l2 * (q14 - 3 * qi04) + 16 * (q16 - qi06)) * Erf((q1 - qi0) / l)
+		  + 4 * sqpi * (3 * l2 * (q04 - 3 * qi14) + 4 * (q06 - qi16)) * Erf((q0 - qi1) / l)
+		  + sqpi * (3 * l6 + 36 * l2 * qi14 + 16 * qi16) * Erf((q1 - qi1) / l)
+		  + 3 * l6 * sqpi * Erf((-q0 + qi1) / l) + 12 * l2 * sqpi * q14 * Erf((-q1 + qi1) / l)
+		  + 16 * sqpi * q16 * Erf((-q1 + qi1) / l)))
+	      / 192.0;
 
-		t1 = expqi * (t11 + t12);
-
-		t21 = -3 * l6 - 3 * l4 * (q0 - q1) * (q0 - q1);
-
-		t22 = l2 * (16 * q04 + 6 * q03 * q1 - 9 * q02 * q12 + 6 * q0 * q13 + 16 * q14);
-
-		t23 = 10 * (q06 + q05 * q1 + q04 * q12 + q03 * q13 + q02 * q14 + q0 * q15 + q16);
-
-		t2 = 2 * l * (t21 + t22 + t23);
-
-		I33[i] = (1.0 / 140.0) * l * expq * (t1 + t2);
-	}
+	return I23;
 }
 
-double test_Imn(double qmin, double qmax, unsigned long nq)
+double get_I33(double q0, double q1, double qi0, double qi1, double lq)
 {
-	double I22[1], I22_num, I33[1], I33_num, I23[1], I23_num, *q, *wq, rel_err, qi2, qi3, q2, q3, Kqqi,
-	    lq, q0[1], q1[1];
+	double I33, q02, q03, q04, q05, q06, q07, q12, q13, q14, q15, q16, q17, l, l2, l4, l3, l5, l6, qi02,
+	    qi03, qi04, qi05, qi06, qi07, qi12, qi13, qi14, qi15, qi16, qi17, sqpi, qdiff00, qdiff01, qdiff10,
+	    qdiff11;
+
+	sqpi = sqrt(PI);
+
+	l = lq;
+	l2 = l * l;
+	l3 = l2 * l;
+	l4 = l3 * l;
+	l5 = l4 * l;
+	l6 = l5 * l;
+
+	q02 = q0 * q0;
+	q03 = q02 * q0;
+	q04 = q03 * q0;
+	q05 = q04 * q0;
+	q06 = q05 * q0;
+	q07 = q06 * q0;
+
+	q12 = q1 * q1;
+	q13 = q12 * q1;
+	q14 = q13 * q1;
+	q15 = q14 * q1;
+	q16 = q15 * q1;
+	q17 = q16 * q1;
+
+	qi02 = qi0 * qi0;
+	qi03 = qi02 * qi0;
+	qi04 = qi03 * qi0;
+	qi05 = qi04 * qi0;
+	qi06 = qi05 * qi0;
+	qi07 = qi06 * qi0;
+
+	qi12 = qi1 * qi1;
+	qi13 = qi12 * qi1;
+	qi14 = qi13 * qi1;
+	qi15 = qi14 * qi1;
+	qi16 = qi15 * qi1;
+	qi17 = qi16 * qi1;
+
+	qdiff00 = (q0 - qi0) * (q0 - qi0);
+	qdiff01 = (q0 - qi1) * (q0 - qi1);
+	qdiff10 = (q1 - qi0) * (q1 - qi0);
+	qdiff11 = (q1 - qi1) * (q1 - qi1);
+
+	I33 = (l
+	       * ((l
+		   * (3 * l6 + 3 * l4 * qdiff00
+		      - l2 * (16 * q04 + 6 * q03 * qi0 - 9 * q02 * qi02 + 6 * q0 * qi03 + 16 * qi04)
+		      - 10 * (q06 + q05 * qi0 + q04 * qi02 + q03 * qi03 + q02 * qi04 + q0 * qi05 + qi06)))
+		      * exp(-qdiff00 / l2)
+		  + (l
+		     * (-3 * l6 - 3 * l4 * qdiff10
+			+ l2 * (16 * q14 + 6 * q13 * qi0 - 9 * q12 * qi02 + 6 * q1 * qi03 + 16 * qi04)
+			+ 10 * (q16 + q15 * qi0 + q14 * qi02 + q13 * qi03 + q12 * qi04 + q1 * qi05 + qi06)))
+			* exp(-qdiff10 / l2)
+		  + (l
+		     * (-3 * l6 - 3 * l4 * qdiff01
+			+ l2 * (16 * q04 + 6 * q03 * qi1 - 9 * q02 * qi12 + 6 * q0 * qi13 + 16 * qi14)
+			+ 10 * (q06 + q05 * qi1 + q04 * qi12 + q03 * qi13 + q02 * qi14 + q0 * qi15 + qi16)))
+			* exp(-qdiff01 / l2)
+		  + (l
+		     * (3 * l6 + 3 * l4 * qdiff11
+			- l2 * (16 * q14 + 6 * q13 * qi1 - 9 * q12 * qi12 + 6 * q1 * qi13 + 16 * qi14)
+			- 10 * (q16 + q15 * qi1 + q14 * qi12 + q13 * qi13 + q12 * qi14 + q1 * qi15 + qi16)))
+			* exp(-qdiff11 / l2)
+		  - sqpi * (21 * l2 * (q05 - qi05) + 10 * (q07 - qi07)) * Erf((q0 - qi0) / l)
+		  + sqpi * (21 * l2 * (q15 - qi05) + 10 * (q17 - qi07)) * Erf((q1 - qi0) / l)
+		  + sqpi * (21 * l2 * (q05 - qi15) + 10 * (q07 - qi17)) * Erf((q0 - qi1) / l)
+		  + sqpi * qi15 * (21 * l2 + 10 * qi12) * Erf((q1 - qi1) / l)
+		  + 21 * l2 * sqpi * q15 * Erf((-q1 + qi1) / l) + 10 * sqpi * q17 * Erf((-q1 + qi1) / l)))
+	      / 140.;
+
+	return I33;
+}
+
+/* TESTS */
+double test_Imn(double qmin, double qmax, double qimin, double qimax, unsigned long nq)
+{
+	double I22, I22_num, I33, I33_num, I23, I23_num, I32, I32_num, *q, *wq, *qi, *wqi, rel_err, qi2, qi3,
+	    q2, q3, Kqqi, lq;
 	unsigned long i, j;
 
 	q = malloc(nq * sizeof(double));
 	assert(q);
 	wq = malloc(nq * sizeof(double));
 	assert(wq);
-
-	q0[0] = qmin;
-	q1[0] = qmax;
+	qi = malloc(nq * sizeof(double));
+	assert(qi);
+	wqi = malloc(nq * sizeof(double));
+	assert(wqi);
 
 	gauss_grid_create(nq, q, wq, qmin, qmax);
+	gauss_grid_create(nq, qi, wqi, qimin, qimax);
 
 	lq = 1.0;
 
 	I22_num = 0;
 	I23_num = 0;
+	I32_num = 0;
 	I33_num = 0;
 	for (i = 0; i < nq; i++) {
 		for (j = 0; j < nq; j++) {
 
 			q2 = q[j] * q[j];
 			q3 = q2 * q[j];
-			qi2 = q[i] * q[i];
-			qi3 = qi2 * q[i];
+			qi2 = qi[i] * qi[i];
+			qi3 = qi2 * qi[i];
 
-			Kqqi = exp(-(q[i] - q[j]) * (q[i] - q[j]) / (lq * lq));
+			Kqqi = exp(-(qi[i] - q[j]) * (qi[i] - q[j]) / (lq * lq));
 
-			I22_num += qi2 * q2 * Kqqi * wq[i] * wq[j];
-			I23_num += qi2 * q3 * Kqqi * wq[i] * wq[j];
-			I33_num += qi3 * q3 * Kqqi * wq[i] * wq[j];
+			I22_num += qi2 * q2 * Kqqi * wqi[i] * wq[j];
+			I23_num += qi2 * q3 * Kqqi * wqi[i] * wq[j];
+			I32_num += qi3 * q2 * Kqqi * wqi[i] * wq[j];
+			I33_num += qi3 * q3 * Kqqi * wqi[i] * wq[j];
 		}
 	}
 
-	get_I22(I22, q0, q1, 1, lq);
-	get_I23(I23, q0, q1, 1, lq);
-	get_I33(I33, q0, q1, 1, lq);
+	I22 = get_I22(qmin, qmax, qimin, qimax, lq);
+	I23 = get_I23(qmin, qmax, qimin, qimax, lq);
+	I32 = get_I23(qimin, qimax, qmin, qmax, lq);
+	I33 = get_I33(qmin, qmax, qimin, qimax, lq);
 
 	rel_err = 0;
-	rel_err += fabs(I22_num - I22[0]) / fabs(I22_num + I22[0]);
-	rel_err += fabs(I23_num - I23[0]) / fabs(I23_num + I23[0]);
-	rel_err += fabs(I33_num - I33[0]) / fabs(I33_num + I33[0]);
+	rel_err += fabs(I22_num - I22) / fabs(I22_num + I22);
+	rel_err += fabs(I23_num - I23) / fabs(I23_num + I23);
+	rel_err += fabs(I32_num - I32) / fabs(I32_num + I32);
+	rel_err += fabs(I33_num - I33) / fabs(I33_num + I33);
 
-	printf("%+.15E %+.15E\n", I22[0], I22_num);
-	printf("%+.15E %+.15E\n", I23[0], I23_num);
-	printf("%+.15E %+.15E\n", I33[0], I33_num);
+	printf("%+.15E %+.15E %+.15E\n", I22, I22_num, fabs(I22 - I22_num));
+	printf("%+.15E %+.15E %+.15E\n", I23, I23_num, fabs(I23 - I23_num));
+	printf("%+.15E %+.15E %+.15E\n", I32, I32_num, fabs(I32 - I32_num));
+	printf("%+.15E %+.15E %+.15E\n", I33, I33_num, fabs(I33 - I33_num));
 
 	free(q);
 	free(wq);
+	free(qi);
+	free(wqi);
 
 	return rel_err;
 }

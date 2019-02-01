@@ -62,9 +62,9 @@ double test_get_I3q(unsigned int nqi, double q0, double q1, double lq);
 double test_Ifq(unsigned long nke, unsigned long nqi, unsigned long nth, double fac, double kmax, double kf, int seed);
 
 /* FLOW F(Q) VARIANCE FUNCTIONS */
-void get_I22(double *I22, const double *qmin, const double *qmax, unsigned long nth, double lq);
-void get_I23(double *I23, const double *qmin, const double *qmax, unsigned long nth, double lq);
-void get_I33(double *I33, const double *qmin, const double *qmax, unsigned long nth, double lq);
+double get_I22(double q0, double q1, double qi0, double qi1, double lq);
+double get_I23(double q0, double q1, double qi0, double qi1, double lq);
+double get_I33(double q0, double q1, double qi0, double qi1, double lq);
 
 /* TESTS FOR FLOW F(Q) VARIANCE */
-double test_Imn(double qmin, double qmax, unsigned long nq);
+double test_Imn(double qmin, double qmax, double qimin, double qimax, unsigned long nq);
