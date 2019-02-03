@@ -66,6 +66,8 @@ double get_I22(double q0, double q1, double qi0, double qi1, double lq);
 double get_I23(double q0, double q1, double qi0, double qi1, double lq);
 double get_I33(double q0, double q1, double qi0, double qi1, double lq);
 void get_zs_II(double *II, const double *ke, unsigned long nke, unsigned int dimke, const double *lxq, unsigned long nth, double fac, double kf);
+double get_integ_covar(const double *Iq, const double *kqq, unsigned long nxq, double *tmp_vec);
 
 /* TESTS FOR FLOW F(Q) VARIANCE */
 double test_Imn(double qmin, double qmax, double qimin, double qimax, unsigned long nq);
+double test_get_integ_covar(unsigned long n, int seed);

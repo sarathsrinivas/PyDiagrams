@@ -299,6 +299,38 @@ void get_zs_II(double *II, const double *ke, unsigned long nke, unsigned int dim
 	free(gth);
 }
 
+/* Iq^T (K^-1) Iq */
+
+double get_integ_covar(const double *Iq, const double *kqq_chlsk, unsigned long nxq, double *tmp_vec)
+{
+
+	double Icv, *vec, ALPHA, BETA;
+	int N, M, INCX, INCY, LDA, LDB, NRHS;
+	unsigned long i;
+	unsigned char UPLO, TRANS, SIDE, DIAG;
+
+	for (i = 0; i < nxq; i++) {
+		tmp_vec[i] = Iq[i];
+	}
+
+	SIDE = 'L';
+	UPLO = 'L';
+	TRANS = 'N';
+	DIAG = 'N';
+	N = nxq;
+	NRHS = 1;
+	LDA = N;
+	LDB = N;
+	ALPHA = 1.0;
+	dtrsm_(&SIDE, &UPLO, &TRANS, &DIAG, &N, &NRHS, &ALPHA, kqq_chlsk, &LDA, tmp_vec, &LDB);
+
+	INCX = 1;
+	INCY = 1;
+	Icv = ddot_(&N, tmp_vec, &INCX, Iq, &INCY);
+
+	return Icv;
+}
+
 /* TESTS */
 double test_Imn(double qmin, double qmax, double qimin, double qimax, unsigned long nq)
 {
@@ -358,4 +390,43 @@ double test_Imn(double qmin, double qmax, double qimin, double qimax, unsigned l
 	free(wqi);
 
 	return rel_err;
+}
+
+double test_get_integ_covar(unsigned long n, int seed)
+{
+
+	double *Id, *vec, *tmp_vec, Icv, Icv_exct;
+	int N, INCX, INCY;
+	unsigned long i;
+	dsfmt_t drng;
+
+	Id = calloc(n * n, sizeof(double));
+	assert(Id);
+	vec = malloc(n * n * sizeof(double));
+	assert(vec);
+	tmp_vec = malloc(n * n * sizeof(double));
+	assert(tmp_vec);
+
+	dsfmt_init_gen_rand(&drng, seed);
+
+	for (i = 0; i < n; i++) {
+		vec[i] = 2.0 * dsfmt_genrand_close_open(&drng);
+	}
+
+	for (i = 0; i < n; i++) {
+		Id[i * n + i] = 1.0;
+	}
+
+	Icv = get_integ_covar(vec, Id, n, tmp_vec);
+
+	N = n;
+	INCX = 1;
+	INCY = 1;
+	Icv_exct = ddot_(&N, vec, &INCX, vec, &INCY);
+
+	free(Id);
+	free(vec);
+	free(tmp_vec);
+
+	return fabs(Icv - Icv_exct);
 }
