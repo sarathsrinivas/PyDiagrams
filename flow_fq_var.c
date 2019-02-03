@@ -305,7 +305,7 @@ double get_integ_covar(const double *Iq, const double *kqq_chlsk, unsigned long 
 {
 
 	double Icv, *vec, ALPHA, BETA;
-	int N, M, INCX, INCY, LDA, LDB, NRHS;
+	int N, M, INCX, INCY, LDA, LDB, NRHS, INFO;
 	unsigned long i;
 	unsigned char UPLO, TRANS, SIDE, DIAG;
 
@@ -322,7 +322,9 @@ double get_integ_covar(const double *Iq, const double *kqq_chlsk, unsigned long 
 	LDA = N;
 	LDB = N;
 	ALPHA = 1.0;
-	dtrsm_(&SIDE, &UPLO, &TRANS, &DIAG, &N, &NRHS, &ALPHA, kqq_chlsk, &LDA, tmp_vec, &LDB);
+	dpotrs_(&UPLO, &N, &NRHS, kqq_chlsk, &LDA, tmp_vec, &LDB, &INFO);
+
+	assert(INFO == 0);
 
 	INCX = 1;
 	INCY = 1;
