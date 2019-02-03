@@ -8,6 +8,7 @@
 #include "lib_flow.h"
 
 #define PI (3.1415926535897)
+#define PREFAC (1 / (8 * PI * PI * PI))
 
 double get_I22(double q0, double q1, double qi0, double qi1, double lq)
 {
@@ -217,6 +218,87 @@ double get_I33(double q0, double q1, double qi0, double qi1, double lq)
 	return I33;
 }
 
+void get_zs_II(double *II, const double *ke, unsigned long nke, unsigned int dimke, const double *lxq,
+	       unsigned long nth, double fac, double kf)
+{
+	double *gth, *gwth, *th, *wth, *q0, *q1, dl, x, xi, wi, lq, lth, lphi, diff_th_kj, exp_th_kj, qmin,
+	    qmax, qimin, qimax, I22, I33, I32, I23, IIphi, lphi2, dl2, e_ext, e_ext2, tmp;
+	unsigned long nth1, i, j, k;
+
+	assert(nth % 4 == 0);
+	nth1 = nth / 4;
+
+	gth = malloc(nth1 * sizeof(double));
+	assert(gth);
+	gwth = malloc(nth1 * sizeof(double));
+	assert(gwth);
+	th = malloc(nth * sizeof(double));
+	assert(th);
+	wth = malloc(nth * sizeof(double));
+	assert(wth);
+	q0 = malloc(nth * sizeof(double));
+	assert(q0);
+	q1 = malloc(nth * sizeof(double));
+	assert(q1);
+
+	gauss_grid_create(nth1, gth, gwth, -1, 1);
+
+	lq = lxq[0];
+	lth = lxq[1];
+	lphi = lxq[2];
+
+	lphi2 = lphi * lphi;
+
+	IIphi = lphi2 * (exp(-(4 * PI * PI / lphi2)) - 1.0) + 2 * lphi * PI * sqrt(PI) * Erf(2 * PI / lphi);
+
+	for (i = 0; i < nke; i++) {
+
+		e_ext = get_zs_energy(&ke[dimke * i], dimke);
+		dl = ke[dimke * i + 0];
+
+		dl2 = dl * dl;
+		e_ext2 = e_ext * e_ext;
+
+		get_zs_th_grid(th, wth, q0, q1, nth, gth, gwth, dl, kf, fac);
+
+		tmp = 0;
+		for (j = 0; j < nth; j++) {
+
+			xi = cos(th[j]);
+			wi = wth[j];
+			qimin = q0[j];
+			qimax = q1[j];
+
+			for (k = 0; k < nth; k++) {
+
+				x = cos(th[k]);
+				qmin = q0[k];
+				qmax = q1[k];
+
+				diff_th_kj = (th[k] - th[j]) / lth;
+				exp_th_kj = exp(-diff_th_kj * diff_th_kj);
+
+				I22 = get_I22(qmin, qmax, qimin, qimax, lq);
+				I23 = get_I23(qmin, qmax, qimin, qimax, lq);
+				I32 = get_I23(qimin, qimax, qmin, qmax, lq);
+				I33 = get_I33(qmin, qmax, qimin, qimax, lq);
+
+				tmp += wi * wth[k] * exp_th_kj
+				       * (16 * dl2 * xi * x * I33 - 4 * dl * e_ext * (xi * I32 + x * I23)
+					  + e_ext2 * I22);
+			}
+		}
+		II[i] = PREFAC * IIphi * tmp;
+	}
+
+	free(q1);
+	free(q0);
+	free(wth);
+	free(th);
+	free(gwth);
+	free(gth);
+}
+
 /* TESTS */
 double test_Imn(double qmin, double qmax, double qimin, double qimax, unsigned long nq)
 {
@@ -269,11 +351,6 @@ double test_Imn(double qmin, double qmax, double qimin, double qimax, unsigned l
 	rel_err += fabs(I23_num - I23) / fabs(I23_num + I23);
 	rel_err += fabs(I32_num - I32) / fabs(I32_num + I32);
 	rel_err += fabs(I33_num - I33) / fabs(I33_num + I33);
-
-	printf("%+.15E %+.15E %+.15E\n", I22, I22_num, fabs(I22 - I22_num));
-	printf("%+.15E %+.15E %+.15E\n", I23, I23_num, fabs(I23 - I23_num));
-	printf("%+.15E %+.15E %+.15E\n", I32, I32_num, fabs(I32 - I32_num));
-	printf("%+.15E %+.15E %+.15E\n", I33, I33_num, fabs(I33 - I33_num));
 
 	free(q);
 	free(wq);
