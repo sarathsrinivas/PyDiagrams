@@ -3,7 +3,8 @@
 #include <assert.h>
 #include <math.h>
 #include <lib_quadrature/lib_quadrature.h>
-#include <lib_gpr/lib_gpr.h>
+#include <atlas/lapack.h>
+#include <atlas/blas.h>
 #include <lib_rng/lib_rng.h>
 #include "lib_flow.h"
 
