@@ -223,7 +223,7 @@ void get_zs_II(double *II, const double *ke, unsigned long nke, unsigned int dim
 	       unsigned long nth, double fac, double kf)
 {
 	double *gth, *gwth, *th, *wth, *q0, *q1, dl, x, xi, wi, lq, lth, lphi, diff_th_kj, exp_th_kj, qmin,
-	    qmax, qimin, qimax, I22, I33, I32, I23, IIphi, lphi2, dl2, e_ext, e_ext2, tmp;
+	    qmax, qimin, qimax, I22, I33, I32, I23, IIphi, lphi2, dl2, e_ext, e_ext2, tmp, sin_thj;
 	unsigned long nth1, i, j, k;
 
 	assert(nth % 4 == 0);
@@ -266,6 +266,7 @@ void get_zs_II(double *II, const double *ke, unsigned long nke, unsigned int dim
 		for (j = 0; j < nth; j++) {
 
 			xi = cos(th[j]);
+			sin_thj = sin(th[j]);
 			wi = wth[j];
 			qimin = q0[j];
 			qimax = q1[j];
@@ -284,12 +285,12 @@ void get_zs_II(double *II, const double *ke, unsigned long nke, unsigned int dim
 				I32 = get_I23(qimin, qimax, qmin, qmax, lq);
 				I33 = get_I33(qmin, qmax, qimin, qimax, lq);
 
-				tmp += wi * wth[k] * exp_th_kj
+				tmp += wi * wth[k] * sin_thj * sin(th[k]) * exp_th_kj
 				       * (16 * dl2 * xi * x * I33 - 4 * dl * e_ext * (xi * I32 + x * I23)
 					  + e_ext2 * I22);
 			}
 		}
-		II[i] = PREFAC * IIphi * tmp;
+		II[i] = PREFAC * PREFAC * IIphi * tmp;
 	}
 
 	free(q1);
@@ -332,6 +333,93 @@ double get_integ_covar(const double *Iq, const double *kqq_chlsk, unsigned long 
 	Icv = ddot_(&N, tmp_vec, &INCX, Iq, &INCY);
 
 	return Icv;
+}
+
+void get_zs_II_num(double *II, const double *ke, unsigned long nke, unsigned int dimke, const double *lxq,
+		   unsigned int dimq, unsigned long nq, unsigned long nth, unsigned long nphi, double fac,
+		   double kf)
+{
+
+	double *gth, *gwth, *th, *wth, *q0, *q1, dl, x, xi, wi, lq, lth, lphi, diff_th_kj, exp_th_kj, qmin,
+	    qmax, qimin, qimax, I22, I33, I32, I23, IIphi, lphi2, dl2, e_ext, e_ext2, tmp, *q, *wq, *gq, *gwq,
+	    *phi, *wphi, xq[3], Ifq[1];
+	unsigned long nth1, i, j, k, m;
+
+	assert(nth % 4 == 0);
+	nth1 = nth / 4;
+
+	gth = malloc(nth1 * sizeof(double));
+	assert(gth);
+	gwth = malloc(nth1 * sizeof(double));
+	assert(gwth);
+	th = malloc(nth * sizeof(double));
+	assert(th);
+	wth = malloc(nth * sizeof(double));
+	assert(wth);
+	q0 = malloc(nth * sizeof(double));
+	assert(q0);
+	q1 = malloc(nth * sizeof(double));
+	assert(q1);
+	gq = malloc(nq * sizeof(double));
+	assert(gq);
+	gwq = malloc(nq * sizeof(double));
+	assert(gwq);
+	q = malloc(nq * sizeof(double));
+	assert(q);
+	wq = malloc(nq * sizeof(double));
+	assert(wq);
+	phi = malloc(nphi * sizeof(double));
+	assert(phi);
+	wphi = malloc(nphi * sizeof(double));
+	assert(wphi);
+
+	gauss_grid_create(nphi, phi, wphi, 0, 2 * PI);
+	gauss_grid_create(nth1, gth, gwth, -1, 1);
+	gauss_grid_create(nq, gq, gwq, -1, 1);
+
+	for (i = 0; i < nke; i++) {
+
+		e_ext = get_zs_energy(&ke[dimke * i], dimke);
+		dl = ke[dimke * i + 0];
+
+		get_zs_th_grid(th, wth, q0, q1, nth, gth, gwth, dl, kf, fac);
+
+		tmp = 0;
+		for (m = 0; m < nphi; m++) {
+			for (j = 0; j < nth; j++) {
+
+				gauss_grid_rescale(gq, gwq, nq, q, wq, q0[j], q1[j]);
+
+				for (k = 0; k < nq; k++) {
+
+					xq[0] = q[k];
+					xq[1] = th[j];
+					xq[2] = phi[m];
+
+					get_zs_Ifq(Ifq, xq, 1, lxq, dimq, &ke[dimke * i], 1, dimke, nth, fac,
+						   kf);
+
+					tmp += wq[k] * wth[j] * wphi[m] * q[k] * q[k] * sin(th[j])
+					       * (-4 * q[k] * dl * cos(th[j]) + e_ext) * Ifq[0];
+				}
+			}
+		}
+
+		II[i] = PREFAC * tmp;
+	}
+
+	free(wphi);
+	free(phi);
+	free(wq);
+	free(q);
+	free(gwq);
+	free(gq);
+	free(q1);
+	free(q0);
+	free(wth);
+	free(th);
+	free(gwth);
+	free(gth);
 }
 
 /* TESTS */
@@ -393,6 +481,50 @@ double test_Imn(double qmin, double qmax, double qimin, double qimax, unsigned l
 	free(wqi);
 
 	return rel_err;
+}
+
+double test_get_zs_II(unsigned long nke, unsigned long nq, unsigned long nth, unsigned long nphi, double kmax,
+		      double kf, int seed)
+{
+	double *ke, fac, *II_num, *II, st[3], en[3], l[3], abs_err;
+	unsigned int dimke, dimq;
+	unsigned long i;
+
+	dimke = 6;
+	dimq = 3;
+
+	ke = malloc(dimke * nke * sizeof(double));
+	assert(ke);
+	II_num = malloc(nke * sizeof(double));
+	assert(II_num);
+	II = malloc(nke * sizeof(double));
+	assert(II);
+
+	st[0] = 0;
+	en[0] = kmax;
+	st[1] = 0;
+	en[1] = kmax;
+	st[2] = 0;
+	en[2] = kmax;
+
+	fill_ext_momenta_3ball(ke, nke, st, en, seed);
+
+	l[0] = 1;
+	l[1] = 1;
+	l[2] = 1;
+
+	fac = 0.96;
+
+	get_zs_II(II, ke, nke, dimke, l, nth, fac, kf);
+
+	get_zs_II_num(II_num, ke, nke, dimke, l, dimq, nq, nth, nphi, fac, kf);
+
+	abs_err = 0;
+	for (i = 0; i < nke; i++) {
+		abs_err += fabs(II[i] - II_num[i]);
+	}
+
+	return abs_err;
 }
 
 double test_get_integ_covar(unsigned long n, int seed)
