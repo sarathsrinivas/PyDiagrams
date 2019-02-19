@@ -85,7 +85,7 @@ void get_zs_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l
 		double kf)
 {
 	double *I_phi, *I2q, *I3q, sqrt_pi, phi_qi, lq, lth, lphi, *gth, *gwth, *th, *wth, exp_th_kj, *q0,
-	    *q1, e_ext, dl, diff_th_kj, tmp, thj, I3_jk, I2_jk;
+	    *q1, e_ext, dl, diff_th_kj, tmp, thj, I3_jk, I2_jk, sigy2;
 	unsigned long i, j, k, nth1;
 
 	assert(nth % 4 == 0);
@@ -117,10 +117,12 @@ void get_zs_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l
 	lq = l[0];
 	lth = l[1];
 	lphi = l[2];
+	sigy2 = l[3] * l[3];
 
 	for (i = 0; i < nq; i++) {
 		phi_qi = xq[dimq * i + 2];
-		I_phi[i] = 0.5 * sqrt_pi * lphi * (Erf(2.0 * PI - phi_qi) - Erf(0 - phi_qi));
+		I_phi[i]
+		    = 0.5 * sqrt_pi * lphi * (Erf((2.0 * PI - phi_qi) / lphi) - Erf((0 - phi_qi) / lphi));
 	}
 
 	for (i = 0; i < nke; i++) {
@@ -149,7 +151,7 @@ void get_zs_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l
 				       * (-4 * dl * cos(th[k]) * I3_jk + e_ext * I2_jk);
 			}
 
-			Ifq[i * nq + j] = PREFAC * I_phi[j] * tmp;
+			Ifq[i * nq + j] = sigy2 * PREFAC * I_phi[j] * tmp;
 		}
 	}
 
@@ -178,14 +180,16 @@ void predict_zs_fq(double *zs, unsigned long nke, const double *wq, unsigned lon
 		zs[i] = ddot_(&N, &wq[i * nq], &INCX, &Ifq[i * nq], &INCY);
 	}
 }
+
 void get_zs_Ifq_num(double *Ifq_num, double *ke, unsigned long nke, unsigned int dimke, double kf,
 		    unsigned long nq, unsigned long nth, unsigned long nphi, double *xqi, unsigned long nxqi,
 		    unsigned int dimq, double *pq, double fac)
 {
 	double *xq, *wxq, dl, *qkrn, q, th_q, phi_q, qi, th_qi, phi_qi, tmp, eq, e_ext;
-	unsigned int nxq, i, j, k;
+	unsigned int nxq, i, j, k, npq;
 
 	nxq = nth * nq * nphi;
+	npq = dimq + 1;
 
 	xq = malloc(dimq * nxq * sizeof(double));
 	assert(xq);
@@ -200,7 +204,7 @@ void get_zs_Ifq_num(double *Ifq_num, double *ke, unsigned long nke, unsigned int
 
 		get_ph_space_grid(xq, wxq, dimq, dl, kf, nq, nth, nphi);
 
-		get_krn_se_ard(qkrn, xqi, xq, nxqi, nxq, dimq, pq, dimq);
+		get_krn_se_ard(qkrn, xqi, xq, nxqi, nxq, dimq, pq, npq);
 
 		e_ext = get_zs_energy(&ke[dimke * i], dimke);
 
@@ -291,6 +295,8 @@ double test_get_I2q(unsigned int tn, double q0, double q1, double lq)
 	double *q, *I2q_exct, *I2q, *qg, *wt, err_norm, diff, qmin[1], qmax[1];
 	unsigned long i, j, ng, nth;
 
+	fprintf(stderr, "test_get_I2q() %s:%d\n", __FILE__, __LINE__);
+
 	q = malloc(tn * sizeof(double));
 	assert(q);
 	I2q_exct = malloc(tn * sizeof(double));
@@ -347,6 +353,8 @@ double test_get_I3q(unsigned int tn, double q0, double q1, double lq)
 	double *q, *I3q_exct, *I3q, *qg, *wt, err_norm, diff, qmin[1], qmax[1];
 	unsigned long i, j, ng, nth;
 
+	fprintf(stderr, "test_get_I3q() %s:%d\n", __FILE__, __LINE__);
+
 	q = malloc(tn * sizeof(double));
 	assert(q);
 	I3q_exct = malloc(tn * sizeof(double));
@@ -401,8 +409,11 @@ double test_get_I3q(unsigned int tn, double q0, double q1, double lq)
 double test_Ifq(unsigned long nke, unsigned long nqi, unsigned long nth, double fac, double kmax, double kf,
 		int seed)
 {
-	double *ke, *xqi, *Ikq, *Ikq_num, st[3], en[3], l[3], err_norm;
+	double *ke, *xqi, *Ikq, *Ikq_num, st[3], en[3], l[4], err_norm;
 	unsigned long nq, nphi, i;
+	dsfmt_t drng;
+
+	fprintf(stderr, "test_Ifq() %s:%d\n", __FILE__, __LINE__);
 
 	ke = malloc(DIMKE * nke * sizeof(double));
 	assert(ke);
@@ -424,14 +435,17 @@ double test_Ifq(unsigned long nke, unsigned long nqi, unsigned long nth, double 
 	fill_ext_momenta_3ball(ke, nke, st, en, seed);
 	fill_ext_momenta_ball(xqi, nqi, st[0], en[0], seed + 4545);
 
-	l[0] = 1;
-	l[1] = 1;
-	l[2] = 1;
+	dsfmt_init_gen_rand(&drng, seed + 3443);
+
+	l[0] = 0.5 + 1.5 * dsfmt_genrand_close_open(&drng);
+	l[1] = 0.5 + 1.5 * dsfmt_genrand_close_open(&drng);
+	l[2] = 0.5 + 1.5 * dsfmt_genrand_close_open(&drng);
+	l[3] = 0.1 + 1.5 * dsfmt_genrand_close_open(&drng);
 
 	get_zs_Ifq(Ikq, xqi, nqi, l, DIMQ, ke, nke, DIMKE, nth, fac, kf);
 
-	nq = 10;
-	nphi = 100;
+	nq = 50;
+	nphi = 50;
 
 	get_zs_Ifq_num(Ikq_num, ke, nke, DIMKE, kf, nq, nth, nphi, xqi, nqi, DIMQ, l, fac);
 
