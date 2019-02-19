@@ -223,7 +223,7 @@ void get_zs_II(double *II, const double *ke, unsigned long nke, unsigned int dim
 	       unsigned long nth, double fac, double kf)
 {
 	double *gth, *gwth, *th, *wth, *q0, *q1, dl, x, xi, wi, lq, lth, lphi, diff_th_kj, exp_th_kj, qmin,
-	    qmax, qimin, qimax, I22, I33, I32, I23, IIphi, lphi2, dl2, e_ext, e_ext2, tmp, sin_thj;
+	    qmax, qimin, qimax, I22, I33, I32, I23, IIphi, lphi2, dl2, e_ext, e_ext2, tmp, sin_thj, sigy2;
 	unsigned long nth1, i, j, k;
 
 	assert(nth % 4 == 0);
@@ -247,6 +247,7 @@ void get_zs_II(double *II, const double *ke, unsigned long nke, unsigned int dim
 	lq = lxq[0];
 	lth = lxq[1];
 	lphi = lxq[2];
+	sigy2 = lxq[3] * lxq[3];
 
 	lphi2 = lphi * lphi;
 
@@ -290,7 +291,7 @@ void get_zs_II(double *II, const double *ke, unsigned long nke, unsigned int dim
 					  + e_ext2 * I22);
 			}
 		}
-		II[i] = PREFAC * PREFAC * IIphi * tmp;
+		II[i] = PREFAC * PREFAC * sigy2 * IIphi * tmp;
 	}
 
 	free(q1);
@@ -429,6 +430,8 @@ double test_Imn(double qmin, double qmax, double qimin, double qimax, unsigned l
 	    q2, q3, Kqqi, lq;
 	unsigned long i, j;
 
+	fprintf(stderr, "test_get_zs_Imn() %s:%d\n", __FILE__, __LINE__);
+
 	q = malloc(nq * sizeof(double));
 	assert(q);
 	wq = malloc(nq * sizeof(double));
@@ -489,6 +492,9 @@ double test_get_zs_II(unsigned long nke, unsigned long nq, unsigned long nth, un
 	double *ke, fac, *II_num, *II, st[3], en[3], l[3], abs_err;
 	unsigned int dimke, dimq;
 	unsigned long i;
+	dsfmt_t drng;
+
+	fprintf(stderr, "test_get_zs_II() %s:%d\n", __FILE__, __LINE__);
 
 	dimke = 6;
 	dimq = 3;
@@ -509,9 +515,12 @@ double test_get_zs_II(unsigned long nke, unsigned long nq, unsigned long nth, un
 
 	fill_ext_momenta_3ball(ke, nke, st, en, seed);
 
-	l[0] = 1;
-	l[1] = 1;
-	l[2] = 1;
+	dsfmt_init_gen_rand(&drng, seed + 3443);
+
+	l[0] = 1.2;
+	l[1] = 0.8;
+	l[2] = 0.5;
+	l[3] = 0.3;
 
 	fac = 0.96;
 
@@ -534,6 +543,8 @@ double test_get_integ_covar(unsigned long n, int seed)
 	int N, INCX, INCY;
 	unsigned long i;
 	dsfmt_t drng;
+
+	fprintf(stderr, "test_get_integ_covar() %s:%d\n", __FILE__, __LINE__);
 
 	Id = calloc(n * n, sizeof(double));
 	assert(Id);
