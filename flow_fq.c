@@ -3,6 +3,8 @@
 #include <assert.h>
 #include <math.h>
 #include <lib_quadrature/lib_quadrature.h>
+#include <atlas/blas.h>
+#include <atlas/lapack.h>
 #include <lib_gpr/lib_gpr.h>
 #include <lib_rng/lib_rng.h>
 #include "lib_flow.h"
@@ -15,7 +17,68 @@
 #define DIMKE (6)
 #define DIMQ (3)
 
-extern double ddot_(const int *N, const double *X, const int *incx, const double *Y, const int *incy);
+void get_zs_fq_mat_fun(double *fqke, const double *ke, unsigned long nke, unsigned int dimke,
+		       const double *qi, unsigned long nqi, unsigned int dimq,
+		       double v_fun(double *, unsigned int, double *), double *vpar)
+{
+	double *kl1, *kl2, v1, v2;
+	unsigned long i, n;
+
+	kl1 = malloc(dimke * nqi * sizeof(double));
+	assert(kl1);
+	kl2 = malloc(dimke * nqi * sizeof(double));
+	assert(kl2);
+
+	for (n = 0; n < nke; n++) {
+
+		fill_zs_loop_mom_ct(kl1, kl2, dimke, &ke[dimke * n], qi, nqi);
+
+		for (i = 0; i < nqi; i++) {
+
+			v1 = v_fun(&kl1[dimke * i], dimke, vpar);
+			v2 = v_fun(&kl2[dimke * i], dimke, vpar);
+
+			fqke[n * nqi + i] = v1 * v2;
+		}
+	}
+
+	free(kl1);
+	free(kl2);
+}
+
+void get_fq_weight_mat(double *wtqke, double *lkqq, const double *kqq, const double *fqke, unsigned long nke,
+		       unsigned long nqi)
+{
+	double eps;
+	int N, N2, INCX, INCY, NRHS, LDA, LDB, info;
+	unsigned long i;
+	unsigned char UPLO;
+
+	N2 = (int)(nqi * nqi);
+	INCX = 1;
+	INCY = 1;
+
+	dcopy_(&N2, kqq, &INCX, lkqq, &INCY);
+
+	eps = 1E-7;
+
+	for (i = 0; i < nqi; i++) {
+		lkqq[i * nqi + i] += eps;
+	}
+
+	N2 = (int)(nqi * nke);
+
+	dcopy_(&N2, fqke, &INCX, wtqke, &INCY);
+
+	UPLO = 'L';
+	N = (int)nqi;
+	LDA = (int)nqi;
+	LDB = (int)nqi;
+	NRHS = (int)nke;
+
+	dposv_(&UPLO, &N, &NRHS, lkqq, &LDA, wtqke, &LDB, &info);
+	assert(info == 0);
+}
 
 void get_I2q(double *I2q, const double *xq, unsigned long nq, unsigned int dim, double *q0, double *q1,
 	     unsigned long nth, double lq)

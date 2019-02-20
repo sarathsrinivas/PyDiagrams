@@ -10,7 +10,7 @@ void get_zs_loop_mom(double *kl1, double *kl2, unsigned int dim, const double *k
 void get_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dlp, double q, double q_th, double q_phi);
 void get_zsp_loop_mom(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dl, double q, double q_th, double q_phi);
 void get_zsp_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dl, double q, double q_th, double q_phi);
-void fill_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, double *ke, double *qvec, unsigned long nq);
+void fill_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double *ke, const double *qvec, unsigned long nq);
 double get_zs_energy(const double *ke, unsigned int dim);
 double get_zsp_energy(const double *ke, unsigned int dim);
 void sph_ct_mom6(const double *ke, unsigned int dim, unsigned long ns, double *ke_ct);
@@ -44,6 +44,9 @@ double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed);
 
 /* FLOW F(Q) */
 double Erf(double x);
+void get_zs_fq_mat_fun(double *fqke, const double *ke, unsigned long nke, unsigned int dimke, const double *qi, unsigned long nqi, unsigned int dimq,
+		       double v_fun(double *, unsigned int, double *), double *vpar);
+void get_fq_weight_mat(double *wtqke, double *lkqq, const double *kqq, const double *fqke, unsigned long nke, unsigned long nqi);
 void get_I2q(double *I2q, const double *xq, unsigned long nq, unsigned int dim, double *q0, double *q1, unsigned long nth, double lq);
 void get_I3q(double *I3q, const double *xq, unsigned long nq, unsigned int dim, double *q0, double *q1, unsigned long nth, double lq);
 void get_zs_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l, unsigned int dimq, const double *ke, unsigned long nke, unsigned int dimke, unsigned long nth, double fac
@@ -66,7 +69,7 @@ double get_I22(double q0, double q1, double qi0, double qi1, double lq);
 double get_I23(double q0, double q1, double qi0, double qi1, double lq);
 double get_I33(double q0, double q1, double qi0, double qi1, double lq);
 void get_zs_II(double *II, const double *ke, unsigned long nke, unsigned int dimke, const double *lxq, unsigned long nth, double fac, double kf);
-double get_integ_covar(const double *Iq, const double *kqq, unsigned long nxq, double *tmp_vec);
+double get_integ_covar(const double *Iq, const double *kqq_chlsk, unsigned long nxq, double *tmp_vec);
 void get_zs_II_num(double *II, const double *ke, unsigned long nke, unsigned int dimke, const double *lxq,
 		   unsigned int dimq, unsigned long nq, unsigned long nth, unsigned long nphi, double fac,
 		   double kf);
