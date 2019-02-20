@@ -201,7 +201,7 @@ void get_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double
 	kl2[5] = acos(P_dlp_zs2 / (P_zs2 * dlp_zs2));
 }
 
-void fill_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, double *ke, double *qvec,
+void fill_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double *ke, const double *qvec,
 			 unsigned long nq)
 {
 	unsigned long i;
