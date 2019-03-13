@@ -11,8 +11,28 @@
 /*
 #define PREFAC (1)
 */
+void sph_ct_mom_ball(double *q_ct, const double *q, unsigned int dimq, unsigned long nq)
+{
+	double qx, qy, qz, r_q, th_q, phi_q;
+	unsigned long i;
 
-void sph_ct_mom6(const double *ke, unsigned int dim, unsigned long ns, double *ke_ct)
+	for (i = 0; i < nq; i++) {
+
+		r_q = q[dimq * i + 0];
+		th_q = q[dimq * i + 1];
+		phi_q = q[dimq * i + 2];
+
+		qx = r_q * cos(phi_q) * sin(th_q);
+		qy = r_q * sin(phi_q) * sin(th_q);
+		qz = r_q * cos(th_q);
+
+		q_ct[dimq * i + 0] = qx;
+		q_ct[dimq * i + 1] = qy;
+		q_ct[dimq * i + 2] = qz;
+	}
+}
+
+void sph_ct_mom6_zs(double *ke_ct, const double *ke, unsigned int dim, unsigned long ns)
 {
 	double dl, dlp, dl_dlp, P_dl, P_dlp, P, dl_z, P_x, P_z, dlp_x, dlp_y, dlp_z, phi_dlp;
 	unsigned long i;
@@ -201,8 +221,8 @@ void get_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double
 	kl2[5] = acos(P_dlp_zs2 / (P_zs2 * dlp_zs2));
 }
 
-void fill_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double *ke, const double *qvec,
-			 unsigned long nq)
+void fill_zs_loop_mom(double *kl1, double *kl2, unsigned int dim, const double *ke, const double *qvec,
+		      unsigned long nq)
 {
 	unsigned long i;
 	double q, q_th, q_phi, phi_dlp, P_dlp, P_dl, dl_dlp;

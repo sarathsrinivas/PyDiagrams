@@ -489,7 +489,7 @@ double test_Imn(double qmin, double qmax, double qimin, double qimax, unsigned l
 double test_get_zs_II(unsigned long nke, unsigned long nq, unsigned long nth, unsigned long nphi, double kmax,
 		      double kf, int seed)
 {
-	double *ke, fac, *II_num, *II, st[3], en[3], l[3], abs_err;
+	double *ke, fac, *II_num, *II, st[3], en[3], l[4], abs_err;
 	unsigned int dimke, dimq;
 	unsigned long i;
 	dsfmt_t drng;
