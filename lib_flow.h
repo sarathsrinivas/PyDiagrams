@@ -10,10 +10,11 @@ void get_zs_loop_mom(double *kl1, double *kl2, unsigned int dim, const double *k
 void get_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dlp, double q, double q_th, double q_phi);
 void get_zsp_loop_mom(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dl, double q, double q_th, double q_phi);
 void get_zsp_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double *ke, double phi_dl, double q, double q_th, double q_phi);
-void fill_zs_loop_mom_ct(double *kl1, double *kl2, unsigned int dim, const double *ke, const double *qvec, unsigned long nq);
+void fill_zs_loop_mom(double *kl1, double *kl2, unsigned int dim, const double *ke, const double *qvec, unsigned long nq);
 double get_zs_energy(const double *ke, unsigned int dim);
 double get_zsp_energy(const double *ke, unsigned int dim);
-void sph_ct_mom6(const double *ke, unsigned int dim, unsigned long ns, double *ke_ct);
+void sph_ct_mom6_zs( double *ke_ct, const double *ke, unsigned int dim, unsigned long ns);
+void sph_ct_mom_ball(double *q_ct, const double *q, unsigned int dimq, unsigned long nq);
 void get_zs_reg_limits(double kmax, const double *ke, double phi_dlp, double th_q, double phi_q,  double *lims);
 /* Phase Spaces */
 void get_zs_th_grid(double *th, double *wth, double *qmin, double *qmax, unsigned long nth, const double *gth, const double *gwth, double dl, double kf, double fac);
@@ -78,3 +79,15 @@ void get_zs_II_num(double *II, const double *ke, unsigned long nke, unsigned int
 double test_Imn(double qmin, double qmax, double qimin, double qimax, unsigned long nq);
 double test_get_integ_covar(unsigned long n, int seed);
 double test_get_zs_II(unsigned long nke, unsigned long nq, unsigned long nth, unsigned long nphi, double kmax, double kf, int seed);
+
+/* GMA  PRECOMPUTED COVARIANCE */
+
+void get_zs_covar_Aeq(double *A1, double *A2, const double *ke_ct, const double *q_ct, unsigned long nke, unsigned int dimke, unsigned long nq, unsigned int dimq, const double *pke,
+		      unsigned long np);
+void get_zs_covar_Bes(double *B1, double *B2, const double *ke_ct, const double *ks_ct, unsigned long nke, unsigned int dimke, const double *pke, unsigned long np);
+void get_zs_covar_Cqs(double *C, const double *ke_ct, const double *q_ct, unsigned long nke, unsigned int dimke, unsigned long nq, unsigned int dimq, const double *pke,
+		      unsigned long np);
+
+/*  TESTS FOR GMA  PRECOMPUTED COVARIANCE */
+
+double test_zs_gma_covar(unsigned long nke, unsigned long nq, int seed);

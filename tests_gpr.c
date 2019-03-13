@@ -105,8 +105,8 @@ double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed)
 		rhs_t[i] = zs_t[i] - zsp_t[i];
 	}
 
-	sph_ct_mom6(ke, DIM, ns, ke_ct);
-	sph_ct_mom6(ket, DIM, nt, ket_ct);
+	sph_ct_mom6_zs(ke_ct, ke, DIM, ns);
+	sph_ct_mom6_zs(ket_ct, ket, DIM, nt);
 
 	get_hyper_param_ard(p, np, ke, rhs, ns, DIM);
 
