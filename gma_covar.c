@@ -6,59 +6,8 @@
 #include <lib_gpr/lib_gpr.h>
 #include "lib_flow.h"
 
-#define DIMKE (6)
+#define DIMKE (7)
 #define DIMQ (3)
-
-void get_zs_loop_mom_ct_ct(double *kl1_ct, double *kl2_ct, const double *ke_ct, unsigned int dimke,
-			   const double *q_ct, unsigned long nq, unsigned int dimq)
-{
-	double dl_ct[3], dlp_ct[3], P_ct[3], dlp_zs1[3], dlp_zs2[3], P_zs1[3], P_zs2[3];
-	unsigned long i, l;
-
-	dl_ct[0] = 0;
-	dl_ct[1] = 0;
-	dl_ct[2] = ke_ct[0];
-
-	dlp_ct[0] = ke_ct[1];
-	dlp_ct[1] = ke_ct[2];
-	dlp_ct[2] = ke_ct[3];
-
-	P_ct[0] = ke_ct[4];
-	P_ct[1] = 0;
-	P_ct[2] = ke_ct[5];
-
-	for (l = 0; l < nq; l++) {
-
-		for (i = 0; i < 3; i++) {
-
-			dlp_zs1[i] = 0.5 * (P_ct[i] + dlp_ct[i] - q_ct[l * dimq + i]);
-
-			P_zs1[i] = 0.5 * (P_ct[i] + dlp_ct[i] + q_ct[l * dimq + i]);
-
-			dlp_zs2[i] = 0.5 * (P_ct[i] - dlp_ct[i] - q_ct[l * dimq + i]);
-
-			P_zs2[i] = 0.5 * (P_ct[i] - dlp_ct[i] + q_ct[l * dimq + i]);
-		}
-
-		kl1_ct[l * dimke + 0] = dl_ct[2];
-
-		kl1_ct[l * dimke + 1] = dlp_zs1[0];
-		kl1_ct[l * dimke + 2] = dlp_zs1[1];
-		kl1_ct[l * dimke + 3] = dlp_zs1[2];
-
-		kl1_ct[l * dimke + 4] = P_zs1[0];
-		kl1_ct[l * dimke + 5] = P_zs1[2];
-
-		kl2_ct[l * dimke + 0] = dl_ct[2];
-
-		kl2_ct[l * dimke + 1] = dlp_zs2[0];
-		kl2_ct[l * dimke + 2] = dlp_zs2[1];
-		kl2_ct[l * dimke + 3] = dlp_zs2[2];
-
-		kl2_ct[l * dimke + 4] = P_zs2[0];
-		kl2_ct[l * dimke + 5] = P_zs2[2];
-	}
-}
 
 void get_zs_covar_Aeq(double *A1, double *A2, const double *ke_ct, const double *q_ct, unsigned long nke,
 		      unsigned int dimke, unsigned long nq, unsigned int dimq, const double *pke,
@@ -75,22 +24,24 @@ void get_zs_covar_Aeq(double *A1, double *A2, const double *ke_ct, const double 
 		dlpy = ke_ct[dimke * i + 2];
 		dlpz = ke_ct[dimke * i + 3];
 		Px = ke_ct[dimke * i + 4];
-		Py = 0;
-		Pz = ke_ct[dimke * i + 5];
+		Py = ke_ct[dimke * i + 5];
+		Pz = ke_ct[dimke * i + 6];
 
 		X1[0] = dlz;
 		X1[1] = 0.5 * (Px + dlpx);
 		X1[2] = 0.5 * (Py + dlpy);
 		X1[3] = 0.5 * (Pz + dlpz);
 		X1[4] = 0.5 * (Px + dlpx);
-		X1[5] = 0.5 * (Pz + dlpz);
+		X1[5] = 0.5 * (Py + dlpy);
+		X1[6] = 0.5 * (Pz + dlpz);
 
 		X2[0] = dlz;
 		X2[1] = 0.5 * (Px - dlpx);
 		X2[2] = 0.5 * (Py - dlpy);
 		X2[3] = 0.5 * (Pz - dlpz);
 		X2[4] = 0.5 * (Px - dlpx);
-		X2[5] = 0.5 * (Pz - dlpz);
+		X2[5] = 0.5 * (Py - dlpy);
+		X2[6] = 0.5 * (Pz - dlpz);
 
 		for (j = 0; j < nq; j++) {
 
@@ -103,7 +54,8 @@ void get_zs_covar_Aeq(double *A1, double *A2, const double *ke_ct, const double 
 			Q[2] = -0.5 * qy;
 			Q[3] = -0.5 * qz;
 			Q[4] = 0.5 * qx;
-			Q[5] = 0.5 * qz;
+			Q[5] = 0.5 * qy;
+			Q[6] = 0.5 * qz;
 
 			deq1 = 0;
 			deq2 = 0;
@@ -135,22 +87,24 @@ void get_zs_covar_Bes(double *B1, double *B2, const double *ke_ct, const double 
 		dlpy = ke_ct[dimke * i + 2];
 		dlpz = ke_ct[dimke * i + 3];
 		Px = ke_ct[dimke * i + 4];
-		Py = 0;
-		Pz = ke_ct[dimke * i + 5];
+		Py = ke_ct[dimke * i + 5];
+		Pz = ke_ct[dimke * i + 6];
 
 		X1[0] = dlz;
 		X1[1] = 0.5 * (Px + dlpx);
 		X1[2] = 0.5 * (Py + dlpy);
 		X1[3] = 0.5 * (Pz + dlpz);
 		X1[4] = 0.5 * (Px + dlpx);
-		X1[5] = 0.5 * (Pz + dlpz);
+		X1[5] = 0.5 * (Py + dlpy);
+		X1[6] = 0.5 * (Pz + dlpz);
 
 		X2[0] = dlz;
 		X2[1] = 0.5 * (Px - dlpx);
 		X2[2] = 0.5 * (Py - dlpy);
 		X2[3] = 0.5 * (Pz - dlpz);
 		X2[4] = 0.5 * (Px - dlpx);
-		X2[5] = 0.5 * (Pz - dlpz);
+		X2[5] = 0.5 * (Py - dlpy);
+		X2[6] = 0.5 * (Pz - dlpz);
 
 		for (j = 0; j < nke; j++) {
 
@@ -160,6 +114,7 @@ void get_zs_covar_Bes(double *B1, double *B2, const double *ke_ct, const double 
 			S[3] = ks_ct[dimke * j + 3];
 			S[4] = ks_ct[dimke * j + 4];
 			S[5] = ks_ct[dimke * j + 5];
+			S[6] = ks_ct[dimke * j + 6];
 
 			des1 = 0;
 			des2 = 0;
@@ -180,32 +135,34 @@ void get_zs_covar_Cqs(double *C, const double *ke_ct, const double *q_ct, unsign
 		      unsigned int dimke, unsigned long nq, unsigned int dimq, const double *pke,
 		      unsigned long np)
 {
-	double dlpsx, dlpsy, dlpsz, Psx, Psz, lx2_dlp, ly2_dlp, lz2_dlp, lx2_P, lz2_P, qx, qy, qz, dqs,
+	double dlpsx, dlpsy, dlpsz, Psy, Psx, Psz, lx2_dlp, ly2_dlp, lz2_dlp, lx2_P, lz2_P, qx, qy, qz, dqs,
 	    Q[DIMKE], S[DIMKE];
 
 	unsigned long i, j, l;
 
-	for (i = 0; i < nq; i++) {
+	for (j = 0; j < nke; j++) {
 
-		qx = q_ct[dimq * i + 0];
-		qy = q_ct[dimq * i + 1];
-		qz = q_ct[dimq * i + 2];
+		S[0] = ke_ct[dimke * j + 0];
+		S[1] = ke_ct[dimke * j + 1];
+		S[2] = ke_ct[dimke * j + 2];
+		S[3] = ke_ct[dimke * j + 3];
+		S[4] = ke_ct[dimke * j + 4];
+		S[5] = ke_ct[dimke * j + 5];
+		S[6] = ke_ct[dimke * j + 6];
 
-		Q[0] = 0;
-		Q[1] = -0.5 * qx;
-		Q[2] = -0.5 * qy;
-		Q[3] = -0.5 * qz;
-		Q[4] = 0.5 * qx;
-		Q[5] = 0.5 * qz;
+		for (i = 0; i < nq; i++) {
 
-		for (j = 0; j < nke; j++) {
+			qx = q_ct[dimq * i + 0];
+			qy = q_ct[dimq * i + 1];
+			qz = q_ct[dimq * i + 2];
 
-			S[0] = ke_ct[dimke * j + 0];
-			S[1] = ke_ct[dimke * j + 1];
-			S[2] = ke_ct[dimke * j + 2];
-			S[3] = ke_ct[dimke * j + 3];
-			S[4] = ke_ct[dimke * j + 4];
-			S[5] = ke_ct[dimke * j + 5];
+			Q[0] = 0;
+			Q[1] = -0.5 * qx;
+			Q[2] = -0.5 * qy;
+			Q[3] = -0.5 * qz;
+			Q[4] = 0.5 * qx;
+			Q[5] = 0.5 * qy;
+			Q[6] = 0.5 * qz;
 
 			dqs = 0;
 			for (l = 0; l < dimke; l++) {
@@ -213,7 +170,7 @@ void get_zs_covar_Cqs(double *C, const double *ke_ct, const double *q_ct, unsign
 				dqs += (-2 * Q[l] * S[l]) / (pke[l] * pke[l]);
 			}
 
-			C[i * nke + j] = exp(-dqs);
+			C[j * nq + i] = pke[dimke] * pke[dimke] * exp(-dqs);
 		}
 	}
 }
@@ -281,12 +238,11 @@ double test_zs_gma_covar(unsigned long nke, unsigned long nq, int seed)
 	st[2] = 0;
 	en[2] = kmax;
 
-	fill_ext_momenta_3ball(ke, nke, st, en, seed);
+	fill_ext_momenta_3ball_7d_ct(ke_ct, nke, st, en, seed);
 
 	fill_ext_momenta_ball(q, nq, st[0], en[0], seed + 443);
 
 	sph_ct_mom_ball(q_ct, q, dimq, nq);
-	sph_ct_mom6_zs(ke_ct, ke, dimke, nke);
 
 	dsfmt_init_gen_rand(&drng, seed + 95);
 
@@ -295,7 +251,7 @@ double test_zs_gma_covar(unsigned long nke, unsigned long nq, int seed)
 	}
 
 	for (e = 0; e < nke; e++) {
-		get_zs_loop_mom_ct_ct(kl1_ct, kl2_ct, &ke_ct[dimke * e], dimke, q_ct, nq, dimq);
+		get_zs_loop_mom_7d_ct(kl1_ct, kl2_ct, &ke_ct[dimke * e], dimke, q_ct, nq, dimq);
 
 		get_krn_se_ard(&kls1[e * nq * nke], kl1_ct, ke_ct, nq, nke, dimke, pke, np);
 
@@ -310,12 +266,10 @@ double test_zs_gma_covar(unsigned long nke, unsigned long nq, int seed)
 		for (l = 0; l < nq; l++) {
 			for (s = 0; s < nke; s++) {
 
-				kls1_spl[e * nke * nq + l * nke + s] = pke[DIMKE] * pke[DIMKE]
-								       * A1[e * nq + l] * B1[e * nke + s]
-								       * C[l * nke + s];
-				kls2_spl[e * nke * nq + l * nke + s] = pke[DIMKE] * pke[DIMKE]
-								       * A2[e * nq + l] * B2[e * nke + s]
-								       * C[l * nke + s];
+				kls1_spl[e * nke * nq + l * nke + s]
+				    = A1[e * nq + l] * B1[e * nke + s] * C[s * nq + l];
+				kls2_spl[e * nke * nq + l * nke + s]
+				    = A2[e * nq + l] * B2[e * nke + s] * C[s * nq + l];
 			}
 		}
 	}
