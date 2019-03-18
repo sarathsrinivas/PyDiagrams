@@ -43,6 +43,13 @@ double test_mom_closure(double kmax, unsigned long ns, int seed);
 /* GPR TESTS */
 double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed);
 
+/* FLOW FUNS */
+double get_zs_energy_7d_ct(const double *ke_ct, unsigned int dim);
+void get_zs_loop_mom_7d_ct(double *kl1_ct, double *kl2_ct, const double *ke_ct, unsigned int dimke, const double *q_ct, unsigned long nq, unsigned int dimq);
+void sph_ct_mom_ball(double *q_ct, const double *q, unsigned int dimq, unsigned long nq);
+void get_zs_num_7d_ct(double *zs_ct, double *ke_ct, unsigned long nke, unsigned int dimke, double kf, unsigned long nq, unsigned long nth, unsigned long nphi,
+		      double (*vfun)(double *, unsigned int, double *), double *param);
+
 /* FLOW F(Q) */
 double Erf(double x);
 void get_zs_fq_mat_fun(double *fqke, const double *ke, unsigned long nke, unsigned int dimke, const double *qi, unsigned long nqi, unsigned int dimq,
@@ -89,5 +96,11 @@ void get_zs_covar_Cqs(double *C, const double *ke_ct, const double *q_ct, unsign
 		      unsigned long np);
 
 /*  TESTS FOR GMA  PRECOMPUTED COVARIANCE */
-
 double test_zs_gma_covar(unsigned long nke, unsigned long nq, int seed);
+
+/* F(Q) SAMPLES */
+void get_zs_fq_samples(double *fq, const double *wt_gma, const double *A1eq, const double *B1es, const double *A2eq, const double *B2es, const double *Csq, unsigned long nq,
+		       unsigned long nke);
+
+/* TEST FOR F(Q) SAMPLES */
+double test_get_zs_fq_samples(unsigned long nke, unsigned long nq, int seed);

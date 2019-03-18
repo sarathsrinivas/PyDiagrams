@@ -11,26 +11,6 @@
 /*
 #define PREFAC (1)
 */
-void sph_ct_mom_ball(double *q_ct, const double *q, unsigned int dimq, unsigned long nq)
-{
-	double qx, qy, qz, r_q, th_q, phi_q;
-	unsigned long i;
-
-	for (i = 0; i < nq; i++) {
-
-		r_q = q[dimq * i + 0];
-		th_q = q[dimq * i + 1];
-		phi_q = q[dimq * i + 2];
-
-		qx = r_q * cos(phi_q) * sin(th_q);
-		qy = r_q * sin(phi_q) * sin(th_q);
-		qz = r_q * cos(th_q);
-
-		q_ct[dimq * i + 0] = qx;
-		q_ct[dimq * i + 1] = qy;
-		q_ct[dimq * i + 2] = qz;
-	}
-}
 
 void sph_ct_mom6_zs(double *ke_ct, const double *ke, unsigned int dim, unsigned long ns)
 {
