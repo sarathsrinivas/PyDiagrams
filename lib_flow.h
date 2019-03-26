@@ -98,9 +98,14 @@ void get_zs_covar_Cqs(double *C, const double *ke_ct, const double *q_ct, unsign
 /*  TESTS FOR GMA  PRECOMPUTED COVARIANCE */
 double test_zs_gma_covar(unsigned long nke, unsigned long nq, int seed);
 
-/* F(Q) SAMPLES */
+/* STAGE ONE */
 void get_zs_fq_samples(double *fq, const double *wt_gma, const double *A1eq, const double *B1es, const double *A2eq, const double *B2es, const double *Csq, unsigned long nq,
 		       unsigned long nke);
+void get_var_gma(double *var_gma12, const double *lkxx, const double *ke_ct, unsigned int dimke, unsigned long nke, const double *q_ct, unsigned int dimq, unsigned long nq,
+		 const double *pke, unsigned long npke, unsigned int ke_flag);
+void get_var_fq(double *var_fq, const double *gma1, const double *gma2, const double *var_gma12, unsigned long nq);
+void get_zs_fq_weights(double *wt_fq, const double *lkxx_gma, const double *wt_gma, const double *A1, const double *B1, const double *A2, const double *B2, const double *C,
+		       unsigned long nq, unsigned long nke);
 
-/* TEST FOR F(Q) SAMPLES */
+/* TESTS FOR STAGE ONE */
 double test_get_zs_fq_samples(unsigned long nke, unsigned long nq, int seed);

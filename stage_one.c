@@ -98,6 +98,84 @@ void get_zs_fq_samples(double *fq, const double *wt_gma, const double *A1eq, con
 	free(wtb);
 }
 
+void get_var_gma(double *var_gma12, const double *lkxx, const double *ke_ct, unsigned int dimke,
+		 unsigned long nke, const double *q_ct, unsigned int dimq, unsigned long nq,
+		 const double *pke, unsigned long npke, unsigned int ke_flag)
+{
+
+	double *ktt12, *ktx12, *kl12_ct;
+	unsigned long i;
+
+	ktt12 = malloc(4 * nq * nq * sizeof(double));
+	assert(ktt12);
+	ktx12 = malloc(2 * nq * nke * sizeof(double));
+	assert(ktx12);
+	kl12_ct = malloc(2 * nq * dimke * sizeof(double));
+	assert(kl12_ct);
+
+	get_zs_loop_mom_7d_ct(kl12_ct, &kl12_ct[nq * dimke], &ke_ct[ke_flag], dimke, q_ct, nq, dimq);
+
+	get_krn_se_ard(ktx12, kl12_ct, ke_ct, 2 * nq, nke, dimke, pke, npke);
+
+	get_krn_se_ard(ktt12, kl12_ct, kl12_ct, 2 * nq, 2 * nq, dimke, pke, npke);
+
+	get_var_mat_chd(var_gma12, ktt12, ktx12, lkxx, 2 * nq, nke);
+
+	free(ktt12);
+	free(ktx12);
+	free(kl12_ct);
+}
+
+void get_var_fq(double *var_fq, const double *gma1, const double *gma2, const double *var_gma12,
+		unsigned long nq)
+{
+	double *gma12, *gma12_mat, ALPHA, BETA, *var_fq2_mat;
+	unsigned long i;
+	int N, M, LDA, INCX, INCY, K;
+	unsigned char UPLO;
+
+	gma12 = malloc(2 * nq * sizeof(double));
+	assert(gma12);
+	gma12_mat = calloc(4 * nq * nq, sizeof(double));
+	assert(gma12_mat);
+	var_fq2_mat = malloc(4 * nq * nq * sizeof(double));
+	assert(var_fq2_mat);
+
+	for (i = 0; i < nq; i++) {
+		gma12[i] = gma2[i];
+		gma12[nq + i] = gma1[i];
+	}
+
+	N = 2 * nq;
+	M = N;
+	INCX = 1;
+	INCY = 1;
+	ALPHA = 1;
+	LDA = N;
+
+	dger_(&M, &N, &ALPHA, gma12, &INCX, gma12, &INCY, var_fq2_mat, &LDA);
+
+	N = 4 * nq * nq;
+	K = 0;
+	LDA = 1;
+	INCX = 1;
+	INCY = 1;
+	UPLO = 'L';
+	ALPHA = 1.0;
+	BETA = 0.0;
+
+	dsbmv_(&UPLO, &N, &K, &ALPHA, var_gma12, &LDA, gma12_mat, &INCX, &BETA, var_fq2_mat, &INCY);
+
+	for (i = 0; i < nq; i++) {
+		var_fq[i] = var_fq2_mat[nq * i + i] + var_fq2_mat[nq * i + (nq + i)]
+			    + var_fq2_mat[nq * (nq + i) + i] + var_fq2_mat[nq * (nq + i) + (nq + i)];
+	}
+
+	free(gma12);
+	free(gma12_mat);
+	free(var_fq2_mat);
+}
+
 void get_zs_fq_weights(double *wt_fq, const double *lkxx_gma, const double *wt_gma, const double *A1,
 		       const double *B1, const double *A2, const double *B2, const double *C,
 		       unsigned long nq, unsigned long nke)
