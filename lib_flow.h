@@ -109,5 +109,12 @@ void get_var_fq(double *var_fq, const double *gma1, const double *gma2, const do
 double test_get_zs_fq_samples(unsigned long nke, unsigned long nq, int seed);
 
 /* STAGE TWO */
-void get_zs_fq_weights(double *wt_fq, const double *lkqq, const double *wt_gma, const double *A1, const double *B1, const double *A2, const double *B2, const double *C,
-		       const double *var_gma12, unsigned int ke_flag, unsigned long nq, unsigned long nke);
+void get_noise_covar_chd(double *lknxx, const double *kxx, const double *var, unsigned long nx);
+void get_zs_fq_weights(double *wt_fq, const double *lknqq, unsigned long nq, unsigned long nke);
+void get_gma_gpr_mean(double *gma_gpr, const double *Ifq, const double *wfq, unsigned long nke, unsigned long nq);
+void get_gma_gpr_var(double *var_gma_gpr, const double *II, const double *Iqe, const double *lknqq, unsigned long nq, unsigned long nke);
+void get_gma_weight(double *wt_gma, const double *lknxx_gma, const double *gma, unsigned long nke);
+void get_noisy_inverse(double *wt, const double *lkqq, const double *var, const double *y, unsigned long nq, unsigned long nke);
+
+/* TESTS FOR STAGE TWO */
+double test_noisy_inverse(unsigned long nq, unsigned long nke, double sigma2, int seed);
