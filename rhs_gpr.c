@@ -6,7 +6,7 @@
 #include <lib_gpr/lib_gpr.h>
 #include "lib_flow.h"
 
-void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *param)
+void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *par)
 {
 
 	double *lknxx_gma, *kxx_gma, *wt_gma, *var_gma12, *ke_ct, *q_ct, *pke_ct, *wt_fq, *var_fq, *A1, *B1,
@@ -15,7 +15,7 @@ void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsi
 	unsigned int dimq, dimke, ke_flag;
 	struct rhs_param *par;
 
-	par = (struct rhs_param *)param;
+	printf("0\n");
 
 	ke_ct = par->ke_ct;
 	q_ct = par->q_ct;
@@ -64,23 +64,43 @@ void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsi
 
 	npke = dimke + 1;
 
+	printf("1\n");
+
 	get_noise_covar_chd(lknxx_gma, kxx_gma, var_gma0, nke);
+
+	printf("2\n");
 
 	get_gma_weight(wt_gma, lknxx_gma, gma0, nke);
 
+	printf("3\n");
+
 	get_var_gma(var_gma12, lknxx_gma, ke_ct, dimke, nke, q_ct, dimq, nq, pke_ct, npke, ke_flag);
+
+	printf("4\n");
 
 	get_fq_samples(wt_fq, var_fq, wt_gma, A1, B1, A2, B2, C, var_gma12, ke_flag, nq, nke);
 
+	printf("5\n");
+
 	get_noise_covar_chd(lknxx_fq, kxx_fq, var_fq, nq);
+
+	printf("6\n");
 
 	get_fq_weights(wt_fq, lknxx_fq, nq, nke);
 
+	printf("7\n");
+
 	get_zs_Ifq(Iqe, q_sph, nq, pq_sph, dimq, ke_ct, nke, dimke, nth, fac, kf);
+
+	printf("8\n");
 
 	get_gma_gpr_mean(gma, Iqe, wt_fq, nke, nq);
 
+	printf("9\n");
+
 	get_zs_II(IIe, ke_ct, nke, dimke, pq_sph, nth, fac, kf);
+
+	printf("10\n");
 
 	get_gma_gpr_var(var_gma, IIe, Iqe, lknxx_fq, nq, nke);
 
