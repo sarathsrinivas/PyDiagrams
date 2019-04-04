@@ -1,3 +1,12 @@
+/* DATA STRUCTURES */
+struct rhs_param {
+	double *ke_ct, *q_ct, *q_sph, *pke_ct, *pq_sph, *kxx_gma, *kxx_fq,
+		   *A1, *B1, *A2, *B2, *C;
+	double fac, kf;
+	unsigned int dimke, dimq, ke_flag;
+	unsigned long nq, nth;
+};
+
 double zs_contact(const double *ke, unsigned int dim, double kf, double g);
 double zsp_contact(const double *ke, unsigned int dim, double kf, double g);
 void zs_flow(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, double kf, unsigned long nq,
@@ -57,12 +66,12 @@ void get_zs_fq_mat_fun(double *fqke, const double *ke, unsigned long nke, unsign
 void get_fq_weight_mat(double *wtqke, double *lkqq, const double *kqq, const double *fqke, unsigned long nke, unsigned long nqi);
 void get_I2q(double *I2q, const double *xq, unsigned long nq, unsigned int dim, double *q0, double *q1, unsigned long nth, double lq);
 void get_I3q(double *I3q, const double *xq, unsigned long nq, unsigned int dim, double *q0, double *q1, unsigned long nth, double lq);
-void get_zs_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l, unsigned int dimq, const double *ke, unsigned long nke, unsigned int dimke, unsigned long nth, double fac
-		, double kf);
+void get_zs_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l, unsigned int dimq, const double *ke_ct, unsigned long nke,
+			   	unsigned int dimke, unsigned long nth, double fac, double kf);
 void get_zs_num(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, double kf, unsigned long nq, \
 		unsigned long nth, unsigned long nphi, double (*vfun)(double *, unsigned int, double *),
 		double *param);
-void get_zs_Ifq_num(double *Ifq_num, double *ke, unsigned long nke, unsigned int dimke, double kf, \
+void get_zs_Ifq_num(double *Ifq_num, double *ke_ct, unsigned long nke, unsigned int dimke, double kf, \
 		    unsigned long nq, unsigned long nth, unsigned long nphi, double *xqi, unsigned long nxqi, \
 		    unsigned int dimq, double *pq, double fac);
 void predict_zs_fq(double *zs, unsigned long nke, const double *wq, unsigned long nq, const double *Ifq);
@@ -76,9 +85,9 @@ double test_Ifq(unsigned long nke, unsigned long nqi, unsigned long nth, double 
 double get_I22(double q0, double q1, double qi0, double qi1, double lq);
 double get_I23(double q0, double q1, double qi0, double qi1, double lq);
 double get_I33(double q0, double q1, double qi0, double qi1, double lq);
-void get_zs_II(double *II, const double *ke, unsigned long nke, unsigned int dimke, const double *lxq, unsigned long nth, double fac, double kf);
+void get_zs_II(double *II, const double *ke_ct, unsigned long nke, unsigned int dimke, const double *lxq, unsigned long nth, double fac, double kf);
 double get_integ_covar(const double *Iq, const double *kqq_chlsk, unsigned long nxq, double *tmp_vec);
-void get_zs_II_num(double *II, const double *ke, unsigned long nke, unsigned int dimke, const double *lxq,
+void get_zs_II_num(double *II, const double *ke_ct, unsigned long nke, unsigned int dimke, const double *lxq,
 		   unsigned int dimq, unsigned long nq, unsigned long nth, unsigned long nphi, double fac,
 		   double kf);
 
@@ -99,7 +108,7 @@ void get_zs_covar_Cqs(double *C, const double *ke_ct, const double *q_ct, unsign
 double test_zs_gma_covar(unsigned long nke, unsigned long nq, int seed);
 
 /* STAGE ONE */
-void get_zs_fq_samples(double *fq, double *var_fq, const double *wt_gma, const double *A1eq, const double *B1es, const double *A2eq, const double *B2es, const double *Csq,
+void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const double *A1eq, const double *B1es, const double *A2eq, const double *B2es, const double *Csq,
 		       const double *var_gma12, unsigned int ke_flag, unsigned long nq, unsigned long nke);
 void get_var_gma(double *var_gma12, const double *lkxx, const double *ke_ct, unsigned int dimke, unsigned long nke, const double *q_ct, unsigned int dimq, unsigned long nq,
 		 const double *pke, unsigned long npke, unsigned int ke_flag);
@@ -110,7 +119,7 @@ double test_get_zs_fq_samples(unsigned long nke, unsigned long nq, int seed);
 
 /* STAGE TWO */
 void get_noise_covar_chd(double *lknxx, const double *kxx, const double *var, unsigned long nx);
-void get_zs_fq_weights(double *wt_fq, const double *lknqq, unsigned long nq, unsigned long nke);
+void get_fq_weights(double *wt_fq, const double *lknqq, unsigned long nq, unsigned long nke);
 void get_gma_gpr_mean(double *gma_gpr, const double *Ifq, const double *wfq, unsigned long nke, unsigned long nq);
 void get_gma_gpr_var(double *var_gma_gpr, const double *II, const double *Iqe, const double *lknqq, unsigned long nq, unsigned long nke);
 void get_gma_weight(double *wt_gma, const double *lknxx_gma, const double *gma, unsigned long nke);
@@ -118,3 +127,6 @@ void get_noisy_inverse(double *wt, const double *lkqq, const double *var, const 
 
 /* TESTS FOR STAGE TWO */
 double test_noisy_inverse(unsigned long nq, unsigned long nke, double sigma2, int seed);
+
+/* RHS */
+void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *param);
