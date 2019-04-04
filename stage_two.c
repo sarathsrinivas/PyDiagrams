@@ -117,7 +117,7 @@ void get_gma_weight(double *wt_gma, const double *lknxx_gma, const double *gma, 
 	int N, LDA, LDB, NRHS, INCX, INCY, INFO;
 	unsigned char UPLO;
 
-	N = nke * nke;
+	N = nke;
 	INCX = 1;
 	INCY = 1;
 
