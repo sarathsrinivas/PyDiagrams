@@ -8,9 +8,9 @@
 #include <atlas/lapack.h>
 #include "lib_flow.h"
 
-void get_zs_fq_samples(double *fq, double *var_fq, const double *wt_gma, const double *A1eq,
-		       const double *B1es, const double *A2eq, const double *B2es, const double *Csq,
-		       const double *var_gma12, unsigned int ke_flag, unsigned long nq, unsigned long nke)
+void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const double *A1eq, const double *B1es,
+		    const double *A2eq, const double *B2es, const double *Csq, const double *var_gma12,
+		    unsigned int ke_flag, unsigned long nq, unsigned long nke)
 
 {
 	double *wtb, *gma1, *gma2, *wbc;
@@ -279,7 +279,7 @@ double test_get_zs_fq_samples(unsigned long nke, unsigned long nq, int seed)
 	get_zs_covar_Bes(B1, B2, ke_ct, ke_ct, nke, dimke, pke, np);
 	get_zs_covar_Cqs(C, ke_ct, q_ct, nke, dimke, nq, dimq, pke, np);
 
-	get_zs_fq_samples(fq2, NULL, wt_gma, A1, B1, A2, B2, C, NULL, 0, nq, nke);
+	get_fq_samples(fq2, NULL, wt_gma, A1, B1, A2, B2, C, NULL, 0, nq, nke);
 
 	err = 0;
 	for (i = 0; i < nq * nke; i++) {

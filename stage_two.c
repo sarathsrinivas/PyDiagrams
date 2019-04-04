@@ -33,7 +33,7 @@ void get_noise_covar_chd(double *lknxx, const double *kxx, const double *var, un
 	assert(INFO == 0);
 }
 
-void get_zs_fq_weights(double *wt_fq, const double *lknqq, unsigned long nq, unsigned long nke)
+void get_fq_weights(double *wt_fq, const double *lknqq, unsigned long nq, unsigned long nke)
 {
 	/* wt_fq SHOULD HAVE FQ_SAMPLES ON INPUT */
 
