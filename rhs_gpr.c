@@ -6,14 +6,14 @@
 #include <lib_gpr/lib_gpr.h>
 #include "lib_flow.h"
 
-void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *par)
+void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *param)
 {
 
 	double *lknxx_gma, *kxx_gma, *wt_gma, *var_gma12, *ke_ct, *q_ct, *pke_ct, *wt_fq, *var_fq, *A1, *B1,
 	    *C, *A2, *B2, *lknxx_fq, *kxx_fq, *Iqe, *q_sph, *pq_sph, fac, kf, *IIe;
 	unsigned long nq, npke, nth;
 	unsigned int dimq, dimke, ke_flag;
-	struct rhs_param *par;
+	struct rhs_param *par = param;
 
 	printf("0\n");
 
