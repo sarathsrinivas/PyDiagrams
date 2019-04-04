@@ -14,7 +14,7 @@
 #define PREFAC (1)
 */
 #define PREFAC (1 / (8 * PI * PI * PI))
-#define DIMKE (6)
+#define DIMKE (7)
 #define DIMQ (3)
 
 void get_zs_fq_mat_fun(double *fqke, const double *ke, unsigned long nke, unsigned int dimke,
@@ -144,7 +144,7 @@ void get_I3q(double *I3q, const double *xq, unsigned long nq, unsigned int dim, 
 }
 
 void get_zs_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l, unsigned int dimq,
-		const double *ke, unsigned long nke, unsigned int dimke, unsigned long nth, double fac,
+		const double *ke_ct, unsigned long nke, unsigned int dimke, unsigned long nth, double fac,
 		double kf)
 {
 	double *I_phi, *I2q, *I3q, sqrt_pi, phi_qi, lq, lth, lphi, *gth, *gwth, *th, *wth, exp_th_kj, *q0,
@@ -189,8 +189,8 @@ void get_zs_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l
 	}
 
 	for (i = 0; i < nke; i++) {
-		e_ext = get_zs_energy(&ke[dimke * i], dimke);
-		dl = ke[dimke * i + 0];
+		e_ext = get_zs_energy_7d_ct(&ke_ct[dimke * i], dimke);
+		dl = ke_ct[dimke * i + 0];
 
 		get_zs_th_grid(th, wth, q0, q1, nth, gth, gwth, dl, kf, fac);
 
@@ -244,7 +244,7 @@ void predict_zs_fq(double *zs, unsigned long nke, const double *wq, unsigned lon
 	}
 }
 
-void get_zs_Ifq_num(double *Ifq_num, double *ke, unsigned long nke, unsigned int dimke, double kf,
+void get_zs_Ifq_num(double *Ifq_num, double *ke_ct, unsigned long nke, unsigned int dimke, double kf,
 		    unsigned long nq, unsigned long nth, unsigned long nphi, double *xqi, unsigned long nxqi,
 		    unsigned int dimq, double *pq, double fac)
 {
@@ -263,13 +263,13 @@ void get_zs_Ifq_num(double *Ifq_num, double *ke, unsigned long nke, unsigned int
 
 	for (i = 0; i < nke; i++) {
 
-		dl = ke[dimke * i + 0];
+		dl = ke_ct[dimke * i + 0];
 
 		get_ph_space_grid(xq, wxq, dimq, dl, kf, nq, nth, nphi);
 
 		get_krn_se_ard(qkrn, xqi, xq, nxqi, nxq, dimq, pq, npq);
 
-		e_ext = get_zs_energy(&ke[dimke * i], dimke);
+		e_ext = get_zs_energy_7d_ct(&ke_ct[dimke * i], dimke);
 
 		for (j = 0; j < nxqi; j++) {
 
@@ -472,14 +472,14 @@ double test_get_I3q(unsigned int tn, double q0, double q1, double lq)
 double test_Ifq(unsigned long nke, unsigned long nqi, unsigned long nth, double fac, double kmax, double kf,
 		int seed)
 {
-	double *ke, *xqi, *Ikq, *Ikq_num, st[3], en[3], l[4], err_norm;
+	double *ke_ct, *xqi, *Ikq, *Ikq_num, st[3], en[3], l[4], err_norm;
 	unsigned long nq, nphi, i;
 	dsfmt_t drng;
 
 	fprintf(stderr, "test_Ifq() %s:%d\n", __FILE__, __LINE__);
 
-	ke = malloc(DIMKE * nke * sizeof(double));
-	assert(ke);
+	ke_ct = malloc(DIMKE * nke * sizeof(double));
+	assert(ke_ct);
 	xqi = malloc(DIMQ * nqi * sizeof(double));
 	assert(xqi);
 
@@ -495,7 +495,7 @@ double test_Ifq(unsigned long nke, unsigned long nqi, unsigned long nth, double 
 	st[2] = 0;
 	en[2] = kmax;
 
-	fill_ext_momenta_3ball(ke, nke, st, en, seed);
+	fill_ext_momenta_3ball_7d_ct(ke_ct, nke, st, en, seed);
 	fill_ext_momenta_ball(xqi, nqi, st[0], en[0], seed + 4545);
 
 	dsfmt_init_gen_rand(&drng, seed + 3443);
@@ -505,19 +505,19 @@ double test_Ifq(unsigned long nke, unsigned long nqi, unsigned long nth, double 
 	l[2] = 0.5 + 1.5 * dsfmt_genrand_close_open(&drng);
 	l[3] = 0.1 + 1.5 * dsfmt_genrand_close_open(&drng);
 
-	get_zs_Ifq(Ikq, xqi, nqi, l, DIMQ, ke, nke, DIMKE, nth, fac, kf);
+	get_zs_Ifq(Ikq, xqi, nqi, l, DIMQ, ke_ct, nke, DIMKE, nth, fac, kf);
 
 	nq = 50;
 	nphi = 50;
 
-	get_zs_Ifq_num(Ikq_num, ke, nke, DIMKE, kf, nq, nth, nphi, xqi, nqi, DIMQ, l, fac);
+	get_zs_Ifq_num(Ikq_num, ke_ct, nke, DIMKE, kf, nq, nth, nphi, xqi, nqi, DIMQ, l, fac);
 
 	err_norm = 0;
 	for (i = 0; i < nke * nqi; i++) {
 		err_norm += fabs(Ikq[i] - Ikq_num[i]) / fabs(Ikq[i] + Ikq_num[i]);
 	}
 
-	free(ke);
+	free(ke_ct);
 	free(xqi);
 	free(Ikq);
 	free(Ikq_num);

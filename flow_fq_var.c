@@ -219,7 +219,7 @@ double get_I33(double q0, double q1, double qi0, double qi1, double lq)
 	return I33;
 }
 
-void get_zs_II(double *II, const double *ke, unsigned long nke, unsigned int dimke, const double *lxq,
+void get_zs_II(double *II, const double *ke_ct, unsigned long nke, unsigned int dimke, const double *lxq,
 	       unsigned long nth, double fac, double kf)
 {
 	double *gth, *gwth, *th, *wth, *q0, *q1, dl, x, xi, wi, lq, lth, lphi, diff_th_kj, exp_th_kj, qmin,
@@ -255,8 +255,8 @@ void get_zs_II(double *II, const double *ke, unsigned long nke, unsigned int dim
 
 	for (i = 0; i < nke; i++) {
 
-		e_ext = get_zs_energy(&ke[dimke * i], dimke);
-		dl = ke[dimke * i + 0];
+		e_ext = get_zs_energy_7d_ct(&ke_ct[dimke * i], dimke);
+		dl = ke_ct[dimke * i + 0];
 
 		dl2 = dl * dl;
 		e_ext2 = e_ext * e_ext;
@@ -336,7 +336,7 @@ double get_integ_covar(const double *Iq, const double *kqq_chlsk, unsigned long 
 	return Icv;
 }
 
-void get_zs_II_num(double *II, const double *ke, unsigned long nke, unsigned int dimke, const double *lxq,
+void get_zs_II_num(double *II, const double *ke_ct, unsigned long nke, unsigned int dimke, const double *lxq,
 		   unsigned int dimq, unsigned long nq, unsigned long nth, unsigned long nphi, double fac,
 		   double kf)
 {
@@ -380,8 +380,8 @@ void get_zs_II_num(double *II, const double *ke, unsigned long nke, unsigned int
 
 	for (i = 0; i < nke; i++) {
 
-		e_ext = get_zs_energy(&ke[dimke * i], dimke);
-		dl = ke[dimke * i + 0];
+		e_ext = get_zs_energy_7d_ct(&ke_ct[dimke * i], dimke);
+		dl = ke_ct[dimke * i + 0];
 
 		get_zs_th_grid(th, wth, q0, q1, nth, gth, gwth, dl, kf, fac);
 
@@ -397,8 +397,8 @@ void get_zs_II_num(double *II, const double *ke, unsigned long nke, unsigned int
 					xq[1] = th[j];
 					xq[2] = phi[m];
 
-					get_zs_Ifq(Ifq, xq, 1, lxq, dimq, &ke[dimke * i], 1, dimke, nth, fac,
-						   kf);
+					get_zs_Ifq(Ifq, xq, 1, lxq, dimq, &ke_ct[dimke * i], 1, dimke, nth,
+						   fac, kf);
 
 					tmp += wq[k] * wth[j] * wphi[m] * q[k] * q[k] * sin(th[j])
 					       * (-4 * q[k] * dl * cos(th[j]) + e_ext) * Ifq[0];
@@ -489,18 +489,18 @@ double test_Imn(double qmin, double qmax, double qimin, double qimax, unsigned l
 double test_get_zs_II(unsigned long nke, unsigned long nq, unsigned long nth, unsigned long nphi, double kmax,
 		      double kf, int seed)
 {
-	double *ke, fac, *II_num, *II, st[3], en[3], l[4], abs_err;
+	double *ke_ct, fac, *II_num, *II, st[3], en[3], l[4], abs_err;
 	unsigned int dimke, dimq;
 	unsigned long i;
 	dsfmt_t drng;
 
 	fprintf(stderr, "test_get_zs_II() %s:%d\n", __FILE__, __LINE__);
 
-	dimke = 6;
+	dimke = 7;
 	dimq = 3;
 
-	ke = malloc(dimke * nke * sizeof(double));
-	assert(ke);
+	ke_ct = malloc(dimke * nke * sizeof(double));
+	assert(ke_ct);
 	II_num = malloc(nke * sizeof(double));
 	assert(II_num);
 	II = malloc(nke * sizeof(double));
@@ -513,7 +513,7 @@ double test_get_zs_II(unsigned long nke, unsigned long nq, unsigned long nth, un
 	st[2] = 0;
 	en[2] = kmax;
 
-	fill_ext_momenta_3ball(ke, nke, st, en, seed);
+	fill_ext_momenta_3ball_7d_ct(ke_ct, nke, st, en, seed);
 
 	dsfmt_init_gen_rand(&drng, seed + 3443);
 
@@ -524,14 +524,18 @@ double test_get_zs_II(unsigned long nke, unsigned long nq, unsigned long nth, un
 
 	fac = 0.96;
 
-	get_zs_II(II, ke, nke, dimke, l, nth, fac, kf);
+	get_zs_II(II, ke_ct, nke, dimke, l, nth, fac, kf);
 
-	get_zs_II_num(II_num, ke, nke, dimke, l, dimq, nq, nth, nphi, fac, kf);
+	get_zs_II_num(II_num, ke_ct, nke, dimke, l, dimq, nq, nth, nphi, fac, kf);
 
 	abs_err = 0;
 	for (i = 0; i < nke; i++) {
 		abs_err += fabs(II[i] - II_num[i]);
 	}
+
+	free(ke_ct);
+	free(II_num);
+	free(II);
 
 	return abs_err;
 }
