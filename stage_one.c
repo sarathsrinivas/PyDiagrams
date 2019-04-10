@@ -133,33 +133,30 @@ void get_var_gma(double *var_gma12, const double *lkxx, const double *ke_ct, uns
 void get_var_fq(double *var_fq, const double *gma1, const double *gma2, const double *var_gma12,
 		unsigned long nq)
 {
-	double *gma12, *gma12_mat, ALPHA, BETA, *var_fq2_mat;
+	double *gma12, *var_gma12_diag, *var_fq_12, ALPHA, BETA, t1, t2;
 	unsigned long i;
 	int N, M, LDA, INCX, INCY, K;
 	unsigned char UPLO;
 
 	gma12 = malloc(2 * nq * sizeof(double));
 	assert(gma12);
-	gma12_mat = calloc(4 * nq * nq, sizeof(double));
-	assert(gma12_mat);
-	var_fq2_mat = malloc(4 * nq * nq * sizeof(double));
-	assert(var_fq2_mat);
+	var_gma12_diag = malloc(2 * nq * sizeof(double));
+	assert(var_gma12_diag);
+	var_fq_12 = malloc(2 * nq * sizeof(double));
+	assert(var_fq_12);
 
 	for (i = 0; i < nq; i++) {
-		gma12[i] = gma2[i];
-		gma12[nq + i] = gma1[i];
+		t1 = gma1[i];
+		t2 = gma2[i];
+		gma12[i] = t2 * t2;
+		gma12[nq + i] = t1 * t1;
+	}
+
+	for (i = 0; i < 2 * nq; i++) {
+		var_gma12_diag[i] = var_gma12[2 * nq * i + i];
 	}
 
 	N = 2 * nq;
-	M = N;
-	INCX = 1;
-	INCY = 1;
-	ALPHA = 1;
-	LDA = N;
-
-	dger_(&M, &N, &ALPHA, gma12, &INCX, gma12, &INCY, var_fq2_mat, &LDA);
-
-	N = 4 * nq * nq;
 	K = 0;
 	LDA = 1;
 	INCX = 1;
@@ -168,16 +165,15 @@ void get_var_fq(double *var_fq, const double *gma1, const double *gma2, const do
 	ALPHA = 1.0;
 	BETA = 0.0;
 
-	dsbmv_(&UPLO, &N, &K, &ALPHA, var_gma12, &LDA, gma12_mat, &INCX, &BETA, var_fq2_mat, &INCY);
+	dsbmv_(&UPLO, &N, &K, &ALPHA, var_gma12_diag, &LDA, gma12, &INCX, &BETA, var_fq_12, &INCY);
 
 	for (i = 0; i < nq; i++) {
-		var_fq[i] = var_fq2_mat[nq * i + i] + var_fq2_mat[nq * i + (nq + i)]
-			    + var_fq2_mat[nq * (nq + i) + i] + var_fq2_mat[nq * (nq + i) + (nq + i)];
+		var_fq[i] = var_fq_12[i] + var_fq_12[nq + i] + var_gma12[(2 * nq) * i + (nq + i)];
 	}
 
+	free(var_fq_12);
+	free(var_gma12_diag);
 	free(gma12);
-	free(gma12_mat);
-	free(var_fq2_mat);
 }
 
 double test_get_zs_fq_samples(unsigned long nke, unsigned long nq, int seed)
