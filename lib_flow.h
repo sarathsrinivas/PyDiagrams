@@ -1,7 +1,7 @@
 /* DATA STRUCTURES */
 struct rhs_param {
 	double *ke_ct, *q_ct, *q_sph, *pke_ct, *pq_sph, *kxx_gma, *kxx_fq,
-		   *A1, *B1, *A2, *B2, *C;
+		   *A1, *B1, *A2, *B2, *C, *Iqe, *IIe;
 	double fac, kf;
 	unsigned int dimke, dimq, ke_flag;
 	unsigned long nq, nth;
