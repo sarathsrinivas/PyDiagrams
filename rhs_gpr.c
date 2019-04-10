@@ -15,8 +15,6 @@ void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsi
 	unsigned int dimq, dimke, ke_flag;
 	struct rhs_param *par = param;
 
-	printf("0\n");
-
 	ke_ct = par->ke_ct;
 	q_ct = par->q_ct;
 	q_sph = par->q_sph;
@@ -62,43 +60,21 @@ void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsi
 
 	npke = dimke + 1;
 
-	printf("1\n");
-
 	get_noise_covar_chd(lknxx_gma, kxx_gma, var_gma0, nke);
-
-	printf("2\n");
 
 	get_gma_weight(wt_gma, lknxx_gma, gma0, nke);
 
-	printf("3\n");
-
 	get_var_gma(var_gma12, lknxx_gma, ke_ct, dimke, nke, q_ct, dimq, nq, pke_ct, npke, ke_flag);
-
-	printf("4\n");
 
 	get_fq_samples(wt_fq, var_fq, wt_gma, A1, B1, A2, B2, C, var_gma12, ke_flag, nq, nke);
 
-	for (i = 0; i < nq; i++) {
-		printf("%+.15E\n", var_fq[i]);
-	}
-
-	printf("5\n");
-
 	get_noise_covar_chd(lknxx_fq, kxx_fq, var_fq, nq);
-
-	printf("6\n");
 
 	get_fq_weights(wt_fq, lknxx_fq, nq, nke);
 
-	printf("7\n");
-
 	get_gma_gpr_mean(gma, Iqe, wt_fq, nke, nq);
 
-	printf("8\n");
-
 	get_gma_gpr_var(var_gma, IIe, Iqe, lknxx_fq, nq, nke);
-
-	printf("9\n");
 
 	free(var_fq);
 	free(var_gma12);
