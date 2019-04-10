@@ -21,7 +21,7 @@ void get_noise_covar_chd(double *lknxx, const double *kxx, const double *var, un
 	dcopy_(&N, kxx, &INCX, lknxx, &INCY);
 
 	for (i = 0; i < nx; i++) {
-		lknxx[i * nx + i] += var[i];
+		lknxx[i * nx + i] += var[i] + 1E-7;
 	}
 
 	N = nx;
