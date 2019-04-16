@@ -1,7 +1,7 @@
 /* DATA STRUCTURES */
 struct rhs_param {
 	double *ke_ct, *q_ct, *q_sph, *pke_ct, *pq_sph, *kxx_gma, *kxx_fq,
-		   *A1, *B1, *A2, *B2, *C, *Iqe, *IIe;
+		   *A1, *B1, *A2, *B2, *C, *Iqe, *IIe, *var_fq;
 	double fac, kf;
 	unsigned int dimke, dimq, ke_flag;
 	unsigned long nq, nth;
@@ -70,6 +70,7 @@ void get_zs_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l
 			   	unsigned int dimke, unsigned long nth, double fac, double kf);
 void get_zs_num(double *zs, double *ke_ct, unsigned long nke, unsigned int dimke, double kf, unsigned long nq,
 				unsigned long nth, unsigned long nphi, double (*vfun)(double *, unsigned int, double *), double *param);
+double get_zs_contact(double g, double kf, double *ke_ct, unsigned int dimke);
 void get_zs_Ifq_num(double *Ifq_num, double *ke_ct, unsigned long nke, unsigned int dimke, double kf, \
 		    unsigned long nq, unsigned long nth, unsigned long nphi, double *xqi, unsigned long nxqi, \
 		    unsigned int dimq, double *pq, double fac);
@@ -80,7 +81,6 @@ double test_get_I2q(unsigned int nqi, double q0, double q1, double lq);
 double test_get_I3q(unsigned int nqi, double q0, double q1, double lq);
 double test_Ifq(unsigned long nke, unsigned long nqi, unsigned long nth, double fac, double kmax, double kf, int seed);
 double test_get_zs_num(unsigned long nke, unsigned long nq, unsigned long nth, unsigned long nphi, int seed);
-double get_zs_contact(double g, double kf, double *ke_ct, unsigned int dimke);
 
 /* FLOW F(Q) VARIANCE FUNCTIONS */
 double get_I22(double q0, double q1, double qi0, double qi1, double lq);
