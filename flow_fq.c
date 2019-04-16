@@ -32,7 +32,7 @@ void get_zs_fq_mat_fun(double *fqke, const double *ke, unsigned long nke, unsign
 
 	for (n = 0; n < nke; n++) {
 
-		fill_zs_loop_mom(kl1, kl2, dimke, &ke[dimke * n], qi, nqi);
+		get_zs_loop_mom_7d_ct(kl1, kl2, &ke[dimke * n], dimke, qi, nqi, dimq);
 
 		for (i = 0; i < nqi; i++) {
 
