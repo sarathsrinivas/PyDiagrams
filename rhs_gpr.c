@@ -44,6 +44,7 @@ void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsi
 	ke_flag = par->ke_flag;
 
 	var_fq = par->var_fq;
+	var_gma12 = par->var_gma12;
 
 	lknxx_gma = malloc(nke * nke * sizeof(double));
 	assert(lknxx_gma);
@@ -54,9 +55,6 @@ void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsi
 	assert(wt_gma);
 	wt_fq = malloc(nke * nq * sizeof(double));
 	assert(wt_fq);
-
-	var_gma12 = malloc(4 * nq * nq * sizeof(double));
-	assert(var_gma12);
 
 	npke = dimke + 1;
 
@@ -76,7 +74,6 @@ void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsi
 
 	get_gma_gpr_var(var_gma, IIe, Iqe, lknxx_fq, nq, nke);
 
-	free(var_gma12);
 	free(wt_fq);
 	free(wt_gma);
 	free(lknxx_fq);
