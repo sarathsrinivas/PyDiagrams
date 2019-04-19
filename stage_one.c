@@ -117,7 +117,7 @@ void get_var_gma(double *var_gma12, const double *lkxx, const double *ke_ct, uns
 	kl12_ct = malloc(2 * nq * dimke * sizeof(double));
 	assert(kl12_ct);
 
-	get_zs_loop_mom_7d_ct(kl12_ct, &kl12_ct[nq * dimke], &ke_ct[ke_flag], dimke, q_ct, nq, dimq);
+	get_zs_loop_mom_7d_ct(kl12_ct, &kl12_ct[nq * dimke], &ke_ct[dimke * ke_flag], dimke, q_ct, nq, dimq);
 
 	get_krn_se_ard(ktx12, kl12_ct, ke_ct, 2 * nq, nke, dimke, pke, npke);
 
