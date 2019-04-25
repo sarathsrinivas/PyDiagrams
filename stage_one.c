@@ -102,9 +102,10 @@ void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const doub
 	free(wtb);
 }
 
-void get_var_gma(double *var_gma12, const double *lkxx, const double *ke_ct, unsigned int dimke,
-		 unsigned long nke, const double *q_ct, unsigned int dimq, unsigned long nq,
-		 const double *pke, unsigned long npke, unsigned int ke_flag)
+/*
+void get_var_gma(double *var_gma12, const double *lkxx, const double *ktt12, const double *ktx12, const double
+*kl12_ct, unsigned long nke, const double *q_ct, unsigned int dimq, unsigned long nq, const double *pke,
+unsigned long npke, unsigned int ke_flag)
 {
 
 	double *ktt12, *ktx12, *kl12_ct;
@@ -129,6 +130,7 @@ void get_var_gma(double *var_gma12, const double *lkxx, const double *ke_ct, uns
 	free(ktx12);
 	free(kl12_ct);
 }
+*/
 
 void get_var_fq(double *var_fq, const double *gma1, const double *gma2, const double *var_gma12,
 		unsigned long nq)

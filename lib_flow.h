@@ -1,7 +1,11 @@
 /* DATA STRUCTURES */
 struct rhs_param {
 	double *ke_ct, *q_ct, *q_sph, *pke_ct, *pq_sph, *kxx_gma, *kxx_fq,
-		   *A1, *B1, *A2, *B2, *C, *Iqe, *IIe, *var_fq, *var_gma12;
+		   *ktt12, *ktx12, *kl12_ct,
+		   *A1, *B1, *A2, *B2, *C,
+		   *Iqe, *IIe,
+		   *fqe, *var_fq,
+		   *var_gma12;
 	double fac, kf;
 	unsigned int dimke, dimq, ke_flag;
 	unsigned long nq, nth;
@@ -121,6 +125,7 @@ double test_get_zs_fq_samples(unsigned long nke, unsigned long nq, int seed);
 /* STAGE TWO */
 void get_noise_covar_chd(double *lknxx, const double *kxx, const double *var, unsigned long nx);
 void get_fq_weights(double *wt_fq, const double *lknqq, unsigned long nq, unsigned long nke);
+void get_fq_weights_2(double *wt_fq, const double *lknqq, const double *fq, unsigned long nq, unsigned long nke);
 void get_gma_gpr_mean(double *gma_gpr, const double *Ifq, const double *wfq, unsigned long nke, unsigned long nq);
 void get_gma_gpr_var(double *var_gma_gpr, const double *II, const double *Iqe, const double *lknqq, unsigned long nq, unsigned long nke);
 void get_gma_weight(double *wt_gma, const double *lknxx_gma, const double *gma, unsigned long nke);
