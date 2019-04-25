@@ -33,6 +33,29 @@ void get_noise_covar_chd(double *lknxx, const double *kxx, const double *var, un
 	assert(INFO == 0);
 }
 
+void get_fq_weights_2(double *wt_fq, const double *lknqq, const double *fq, unsigned long nq,
+		      unsigned long nke)
+{
+	int N, NRHS, LDA, LDB, INFO, K, INCX, INCY;
+	unsigned char UPLO;
+
+	N = nke * nq;
+	INCX = 1;
+	INCY = 1;
+
+	dcopy_(&N, fq, &INCX, wt_fq, &INCY);
+
+	UPLO = 'L';
+	N = nq;
+	NRHS = nke;
+	LDA = nq;
+	LDB = nq;
+
+	dpotrs_(&UPLO, &N, &NRHS, lknqq, &LDA, wt_fq, &LDB, &INFO);
+
+	assert(INFO == 0);
+}
+
 void get_fq_weights(double *wt_fq, const double *lknqq, unsigned long nq, unsigned long nke)
 {
 	/* wt_fq SHOULD HAVE FQ_SAMPLES ON INPUT */
