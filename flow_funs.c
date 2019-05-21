@@ -88,27 +88,6 @@ void get_zs_loop_mom_7d_ct(double *kl1_ct, double *kl2_ct, const double *ke_ct, 
 	}
 }
 
-void sph_ct_mom_ball(double *q_ct, const double *q, unsigned int dimq, unsigned long nq)
-{
-	double qx, qy, qz, r_q, th_q, phi_q;
-	unsigned long i;
-
-	for (i = 0; i < nq; i++) {
-
-		r_q = q[dimq * i + 0];
-		th_q = q[dimq * i + 1];
-		phi_q = q[dimq * i + 2];
-
-		qx = r_q * cos(phi_q) * sin(th_q);
-		qy = r_q * sin(phi_q) * sin(th_q);
-		qz = r_q * cos(th_q);
-
-		q_ct[dimq * i + 0] = qx;
-		q_ct[dimq * i + 1] = qy;
-		q_ct[dimq * i + 2] = qz;
-	}
-}
-
 void get_zs_num_7d_ct(double *zs_ct, double *ke_ct, unsigned long nke, unsigned int dimke, double kf,
 		      unsigned long nq, unsigned long nth, unsigned long nphi,
 		      double (*vfun)(double *, unsigned int, double *), double *param)
@@ -139,7 +118,7 @@ void get_zs_num_7d_ct(double *zs_ct, double *ke_ct, unsigned long nke, unsigned 
 
 		get_ph_space_grid(xq, wxq, dimq, dl, kf, nq, nth, nphi);
 
-		sph_ct_mom_ball(q_ct, xq, dimq, nxq);
+		sph_to_ct(q_ct, xq, dimq, nxq);
 
 		get_zs_loop_mom_7d_ct(kl1_ct, kl2_ct, &ke_ct[dimke * n], dimke, q_ct, nxq, dimq);
 

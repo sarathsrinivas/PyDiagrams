@@ -242,7 +242,7 @@ double test_zs_gma_covar(unsigned long nke, unsigned long nq, int seed)
 
 	fill_ext_momenta_ball(q, nq, st[0], en[0], seed + 443);
 
-	sph_ct_mom_ball(q_ct, q, dimq, nq);
+	sph_to_ct(q_ct, q, dimq, nq);
 
 	dsfmt_init_gen_rand(&drng, seed + 95);
 
