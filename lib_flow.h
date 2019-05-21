@@ -56,12 +56,30 @@ double test_mom_closure(double kmax, unsigned long ns, int seed);
 /* GPR TESTS */
 double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed);
 
+/* MOMENTUM SAMPLING */
+void fill_ke_sample_zs_ct(double *ke_ct, unsigned long ns, double *st, double *en, unsigned int seed);
+void get_kep_sample_zsp_ct(double *kep_ct, const double *ke_ct, unsigned long nke, unsigned int dim);
+void fill_q_sample(double *ke, unsigned long ns, double st, double en, unsigned int seed);
+void sph_to_ct(double *q_ct, const double *q, unsigned int dimq, unsigned long nq);
+
+/* TESTS */
+double test_zs_zsp_rot(unsigned long nke, int seed);
+
+
 /* FLOW FUNS */
 double get_zs_energy_7d_ct(const double *ke_ct, unsigned int dim);
 void get_zs_loop_mom_7d_ct(double *kl1_ct, double *kl2_ct, const double *ke_ct, unsigned int dimke, const double *q_ct, unsigned long nq, unsigned int dimq);
-void sph_ct_mom_ball(double *q_ct, const double *q, unsigned int dimq, unsigned long nq);
 void get_zs_num_7d_ct(double *zs_ct, double *ke_ct, unsigned long nke, unsigned int dimke, double kf, unsigned long nq, unsigned long nth, unsigned long nphi,
 		      double (*vfun)(double *, unsigned int, double *), double *param);
+
+/* FLOW NUMERICAL */
+double get_zs_contact(double g, double kf, double *ke_ct, unsigned int dimke);
+void get_zs_num(double *zs, double *ke_ct, unsigned long nke, unsigned int dimke, double kf, unsigned long nq,
+		unsigned long nth, unsigned long nphi, double (*vfun)(double *, unsigned int, double *), double *param);
+
+/* TESTS */
+double test_get_zs_num(unsigned long nke, unsigned long nq, unsigned long nth, unsigned long nphi, int seed);
+double test_get_zsp_num(unsigned long nke, unsigned long nq, unsigned long nth, unsigned long nphi, int seed);
 
 /* FLOW F(Q) */
 double Erf(double x);
