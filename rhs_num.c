@@ -21,12 +21,12 @@ double get_zs_contact(double g, double kf, double *ke_ct, unsigned int dimke)
 	return PREFAC * 2 * PI * zs_ct;
 }
 
-void get_zs_num(double *zs, double *ke_ct, unsigned long nke, unsigned int dimke, double kf, unsigned long nq,
-		unsigned long nth, unsigned long nphi, double (*vfun)(double *, unsigned int, double *),
-		double *param)
+void get_zs_num(double *zs, double *ke_ct, unsigned long nke, unsigned int dimke, double kf,
+		unsigned long nq, unsigned long nth, unsigned long nphi,
+		double (*vfun)(double *, unsigned int, double *), double *param)
 {
-	double *xq, *wxq, ph_vol, q, th, phi, e_ext, kl1_ct[DIMKE], kl2_ct[DIMKE], q_ct[DIMQ], v1, v2, tmp,
-	    eq, P, P_dl, dlp, dl_dlp, dl, P_dlp, phi_dlp;
+	double *xq, *wxq, ph_vol, q, th, phi, e_ext, kl1_ct[DIMKE], kl2_ct[DIMKE], q_ct[DIMQ], v1,
+	    v2, tmp, eq, P, P_dl, dlp, dl_dlp, dl, P_dlp, phi_dlp;
 	unsigned long nxq, i, n;
 	unsigned int dimq;
 
@@ -57,7 +57,8 @@ void get_zs_num(double *zs, double *ke_ct, unsigned long nke, unsigned int dimke
 
 			sph_to_ct(q_ct, &xq[dimq * i], dimq, 1);
 
-			get_zs_loop_mom_7d_ct(kl1_ct, kl2_ct, &ke_ct[dimke * n], dimke, q_ct, 1, dimq);
+			get_zs_loop_mom_7d_ct(kl1_ct, kl2_ct, &ke_ct[dimke * n], dimke, q_ct, 1,
+					      dimq);
 
 			v1 = (*vfun)(kl1_ct, dimke, param);
 			v2 = (*vfun)(kl2_ct, dimke, param);
@@ -72,9 +73,40 @@ void get_zs_num(double *zs, double *ke_ct, unsigned long nke, unsigned int dimke
 	free(wxq);
 }
 
+void get_rhs_num(double *rhs, double *ke_ct, unsigned long nke, unsigned int dimke, double kf,
+		 unsigned long nq, unsigned long nth, unsigned long nphi,
+		 double (*vfun)(double *, unsigned int, double *), double *param)
+{
+	double *zs, *zsp, *kep_ct;
+	unsigned long i;
+
+	kep_ct = malloc(nke * dimke * sizeof(double));
+	assert(kep_ct);
+
+	zs = malloc(nke * sizeof(double));
+	assert(zs);
+	zsp = malloc(nke * sizeof(double));
+	assert(zsp);
+
+	get_zs_num(zs, ke_ct, nke, dimke, kf, nq, nth, nphi, vfun, param);
+
+	get_kep_sample_zsp_ct(kep_ct, ke_ct, nke, dimke);
+
+	get_zs_num(zsp, kep_ct, nke, dimke, kf, nq, nth, nphi, vfun, param);
+
+	for (i = 0; i < nke; i++) {
+		rhs[i] = zs[i] - zsp[i];
+	}
+
+	free(zs);
+	free(zsp);
+	free(kep_ct);
+}
+
 /* TESTS */
 
-double test_get_zs_num(unsigned long nke, unsigned long nq, unsigned long nth, unsigned long nphi, int seed)
+double test_get_zs_num(unsigned long nke, unsigned long nq, unsigned long nth, unsigned long nphi,
+		       int seed)
 {
 	double *ke_ct, *zs_ct, *zs_ct_comp, kf, g, st[3], en[3], vpar[1], kmax, err;
 	unsigned long i;
@@ -126,7 +158,8 @@ double test_get_zs_num(unsigned long nke, unsigned long nq, unsigned long nth, u
 	return err;
 }
 
-double test_get_zsp_num(unsigned long nke, unsigned long nq, unsigned long nth, unsigned long nphi, int seed)
+double test_get_zsp_num(unsigned long nke, unsigned long nq, unsigned long nth, unsigned long nphi,
+			int seed)
 {
 	double *ke_ct, *kep_ct, *zsp_ct, *zsp_ct_comp, kf, g, st[3], en[3], vpar[1], kmax, err;
 	unsigned long i;
@@ -179,6 +212,63 @@ double test_get_zsp_num(unsigned long nke, unsigned long nq, unsigned long nth, 
 	free(kep_ct);
 	free(zsp_ct);
 	free(zsp_ct_comp);
+
+	return err;
+}
+
+double test_rhs_antisymmetry(unsigned long nke, int seed)
+{
+	double *ke_ct, *kep_ct, *rhs, *rhs_as, st[3], en[3], kmax, err, kf, vparam[2], klam;
+	unsigned long i, nq, nth, nphi;
+	unsigned int dimke;
+
+	dimke = 7;
+
+	ke_ct = malloc(nke * dimke * sizeof(double));
+	assert(ke_ct);
+	kep_ct = malloc(nke * dimke * sizeof(double));
+	assert(kep_ct);
+
+	rhs = malloc(nke * sizeof(double));
+	assert(rhs);
+	rhs_as = malloc(nke * sizeof(double));
+	assert(rhs_as);
+
+	kmax = 3.0;
+
+	st[0] = 0;
+	en[0] = kmax;
+	st[1] = 0;
+	en[1] = kmax;
+	st[2] = 0;
+	en[2] = kmax;
+
+	kf = 1.2;
+	klam = 0.5;
+	nq = 10;
+	nth = 80;
+	nphi = 10;
+
+	vparam[0] = kmax;
+	vparam[1] = klam;
+
+	fill_ke_sample_zs_ct(ke_ct, nke, st, en, seed);
+
+	get_rhs_num(rhs, ke_ct, nke, dimke, kf, nq, nth, nphi, &v_exp_reg_ct, vparam);
+
+	get_kep_sample_zsp_ct(kep_ct, ke_ct, nke, dimke);
+
+	get_rhs_num(rhs_as, kep_ct, nke, dimke, kf, nq, nth, nphi, &v_exp_reg_ct, vparam);
+
+	err = 0;
+	for (i = 0; i < nke; i++) {
+		err += fabs(rhs[i] + rhs_as[i]) / fabs(rhs[i] - rhs_as[i]);
+	}
+
+	free(ke_ct);
+	free(kep_ct);
+	free(rhs);
+	free(rhs_as);
 
 	return err;
 }

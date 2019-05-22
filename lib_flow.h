@@ -29,17 +29,20 @@ double get_zsp_energy(const double *ke, unsigned int dim);
 void sph_ct_mom6_zs( double *ke_ct, const double *ke, unsigned int dim, unsigned long ns);
 void sph_ct_mom_ball(double *q_ct, const double *q, unsigned int dimq, unsigned long nq);
 void get_zs_reg_limits(double kmax, const double *ke, double phi_dlp, double th_q, double phi_q,  double *lims);
+
 /* Phase Spaces */
 void get_zs_th_grid(double *th, double *wth, double *qmin, double *qmax, unsigned long nth, const double *gth, const double *gwth, double dl, double kf, double fac);
 void get_ph_space_grid(double *xq, double *wxq, unsigned int dimq, double dl, double kf, unsigned long nq, unsigned long nth, unsigned long nphi);
 double get_ph_space_vol(double dl, double kf, unsigned long nq, unsigned long nth, unsigned long nphi);
 double get_ph_space_vol_fd(double dl, double kf, unsigned long nq, unsigned long nth, unsigned long nphi);
 double get_ph_vol_exct(double dl, double kf);
+
 /* GPR FLOW RHS */
 int zs_flow_gpr(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, double kf, double kmax, unsigned long nq,
 		unsigned long nth, unsigned long nphi, double fac, const double *p, int np, const double *wt, double *lkrxx);
 int zsp_flow_gpr(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, double kf, unsigned long nq,
 		unsigned long nth, unsigned long nphi, double fac, const double *p, int np, const double *wt);
+
 /* TESTS */
 /*
 double test_ph_phase_space_vol(double dl, double kf, double fac_th_brk, unsigned long nq, unsigned long nth, unsigned long nphi);
@@ -76,10 +79,13 @@ void get_zs_num_7d_ct(double *zs_ct, double *ke_ct, unsigned long nke, unsigned 
 double get_zs_contact(double g, double kf, double *ke_ct, unsigned int dimke);
 void get_zs_num(double *zs, double *ke_ct, unsigned long nke, unsigned int dimke, double kf, unsigned long nq,
 		unsigned long nth, unsigned long nphi, double (*vfun)(double *, unsigned int, double *), double *param);
+void get_rhs_num(double *rhs, double *ke_ct, unsigned long nke, unsigned int dimke, double kf,
+		 unsigned long nq, unsigned long nth, unsigned long nphi, double (*vfun)(double *, unsigned int, double *), double *param);
 
 /* TESTS */
 double test_get_zs_num(unsigned long nke, unsigned long nq, unsigned long nth, unsigned long nphi, int seed);
 double test_get_zsp_num(unsigned long nke, unsigned long nq, unsigned long nth, unsigned long nphi, int seed);
+double test_rhs_antisymmetry(unsigned long nke, int seed);
 
 /* FLOW F(Q) */
 double Erf(double x);
