@@ -11,6 +11,24 @@ struct rhs_param {
 	unsigned long nq, nth;
 };
 
+struct rhs_ph_param {
+	double *ke_ct, *kep_ct, *q_ct, *q_sph, *pke_ct, *pq_sph,
+		   *kxx_gma, *kxx_fq,
+		   *ktt12, *ktx12, *kl12_ct,
+		   *A1, *B1, *A2, *B2, *C,
+		   *Iqe, *IIe,
+		   *kxxp_gma, 
+		   *ktt12p, *ktx12p, *kl12p_ct,
+		   *A1p, *B1p, *A2p, *B2p, *Cp,
+		   *Iqep, *IIep,
+		   *fqe, *var_fq,
+		   *fqep, *var_fqp,
+		   *var_gma12, *var_gma12p;
+	double fac, kf;
+	unsigned int dimke, dimq, ke_flag;
+	unsigned long nq, nth;
+};
+
 double zs_contact(const double *ke, unsigned int dim, double kf, double g);
 double zsp_contact(const double *ke, unsigned int dim, double kf, double g);
 void zs_flow(double *zs, double *ext_mom, unsigned long ns, unsigned int dim, double kf, unsigned long nq,
@@ -64,6 +82,7 @@ void fill_ke_sample_zs_ct(double *ke_ct, unsigned long ns, double *st, double *e
 void get_kep_sample_zsp_ct(double *kep_ct, const double *ke_ct, unsigned long nke, unsigned int dim);
 void fill_q_sample(double *ke, unsigned long ns, double st, double en, unsigned int seed);
 void sph_to_ct(double *q_ct, const double *q, unsigned int dimq, unsigned long nq);
+void print_mom(const double *k, unsigned long nk, unsigned int dimk, FILE *out);
 
 /* TESTS */
 double test_zs_zsp_rot(unsigned long nke, int seed);
@@ -160,3 +179,4 @@ double test_noisy_inverse(unsigned long nq, unsigned long nke, double sigma2, in
 
 /* RHS */
 void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *param);
+void flow_rhs_ph(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *param);
