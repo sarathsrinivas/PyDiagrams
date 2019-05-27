@@ -8,9 +8,10 @@
 #include <atlas/lapack.h>
 #include "lib_flow.h"
 
-void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const double *A1eq, const double *B1es,
-		    const double *A2eq, const double *B2es, const double *Csq, const double *var_gma12,
-		    unsigned int ke_flag, unsigned long nq, unsigned long nke)
+void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const double *A1eq,
+		    const double *B1es, const double *A2eq, const double *B2es, const double *Csq,
+		    const double *var_gma12, unsigned int ke_flag, unsigned long nq,
+		    unsigned long nke)
 
 {
 	double *wtb, *gma1, *gma2, *wbc;
@@ -38,8 +39,8 @@ void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const doub
 	BETA = 0.0;
 
 	for (i = 0; i < nke; i++) {
-		dsbmv_(&UPLO, &N, &K, &ALPHA, wt_gma, &LDA, &B1es[nke * i], &INCX, &BETA, &wtb[nke * i],
-		       &INCY);
+		dsbmv_(&UPLO, &N, &K, &ALPHA, wt_gma, &LDA, &B1es[nke * i], &INCX, &BETA,
+		       &wtb[nke * i], &INCY);
 	}
 
 	TA = 'N';
@@ -69,8 +70,8 @@ void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const doub
 	BETA = 0.0;
 
 	for (i = 0; i < nke; i++) {
-		dsbmv_(&UPLO, &N, &K, &ALPHA, wt_gma, &LDA, &B2es[nke * i], &INCX, &BETA, &wtb[nke * i],
-		       &INCY);
+		dsbmv_(&UPLO, &N, &K, &ALPHA, wt_gma, &LDA, &B2es[nke * i], &INCX, &BETA,
+		       &wtb[nke * i], &INCY);
 	}
 
 	TA = 'N';
@@ -103,9 +104,9 @@ void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const doub
 }
 
 /*
-void get_var_gma(double *var_gma12, const double *lkxx, const double *ktt12, const double *ktx12, const double
-*kl12_ct, unsigned long nke, const double *q_ct, unsigned int dimq, unsigned long nq, const double *pke,
-unsigned long npke, unsigned int ke_flag)
+void get_var_gma(double *var_gma12, const double *lkxx, const double *ktt12, const double *ktx12,
+const double *kl12_ct, unsigned long nke, const double *q_ct, unsigned int dimq, unsigned long nq,
+const double *pke, unsigned long npke, unsigned int ke_flag)
 {
 
 	double *ktt12, *ktx12, *kl12_ct;
@@ -118,7 +119,8 @@ unsigned long npke, unsigned int ke_flag)
 	kl12_ct = malloc(2 * nq * dimke * sizeof(double));
 	assert(kl12_ct);
 
-	get_zs_loop_mom_7d_ct(kl12_ct, &kl12_ct[nq * dimke], &ke_ct[dimke * ke_flag], dimke, q_ct, nq, dimq);
+	get_zs_loop_mom_7d_ct(kl12_ct, &kl12_ct[nq * dimke], &ke_ct[dimke * ke_flag], dimke, q_ct,
+nq, dimq);
 
 	get_krn_se_ard(ktx12, kl12_ct, ke_ct, 2 * nq, nke, dimke, pke, npke);
 
@@ -170,7 +172,8 @@ void get_var_fq(double *var_fq, const double *gma1, const double *gma2, const do
 	dsbmv_(&UPLO, &N, &K, &ALPHA, var_gma12_diag, &LDA, gma12, &INCX, &BETA, var_fq_12, &INCY);
 
 	for (i = 0; i < nq; i++) {
-		var_fq[i] = var_fq_12[i] + var_fq_12[nq + i] + var_gma12[(2 * nq) * i + (nq + i)];
+		var_fq[i]
+		    = var_fq_12[i] + var_fq_12[nq + i] + fabs(var_gma12[(2 * nq) * i + (nq + i)]);
 	}
 
 	free(var_fq_12);
@@ -180,8 +183,8 @@ void get_var_fq(double *var_fq, const double *gma1, const double *gma2, const do
 
 double test_get_zs_fq_samples(unsigned long nke, unsigned long nq, int seed)
 {
-	double *kl1_ct, *kl2_ct, *ke_ct, *q, *q_ct, *wt_gma, *ktx1, *ktx2, pke[8], gma1, gma2, *fq, *fq2,
-	    kmax, st[3], en[3], tmp1, tmp2, *A1, *A2, *B1, *B2, *C, err;
+	double *kl1_ct, *kl2_ct, *ke_ct, *q, *q_ct, *wt_gma, *ktx1, *ktx2, pke[8], gma1, gma2, *fq,
+	    *fq2, kmax, st[3], en[3], tmp1, tmp2, *A1, *A2, *B1, *B2, *C, err;
 	unsigned int dimke, dimq;
 	unsigned long np, i, j, l;
 	dsfmt_t drng;
