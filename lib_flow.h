@@ -79,6 +79,7 @@ double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed);
 
 /* MOMENTUM SAMPLING */
 void fill_ke_sample_zs_ct(double *ke_ct, unsigned long ns, double *st, double *en, unsigned int seed);
+void fill_ke_sample_zs_ct_exp(double *ke_ct, unsigned long ns, double *st, double *en, double sig, double a, unsigned int seed);
 void get_kep_sample_zsp_ct(double *kep_ct, const double *ke_ct, unsigned long nke, unsigned int dim);
 void fill_q_sample(double *ke, unsigned long ns, double st, double en, unsigned int seed);
 void sph_to_ct(double *q_ct, const double *q, unsigned int dimq, unsigned long nq);
@@ -184,5 +185,6 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 
 /* RHS */
 void get_rhs_block(double *gma, double *var_gma, const double *gma0, const double *var_gma0, unsigned long nke, struct rhs_param *par);
+void regulate_rhs_gma(double *gma, const double *ke_ct, unsigned long nke, unsigned int dimke, double kmax, double eps);
 void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *param);
 void flow_rhs_ph(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *param);

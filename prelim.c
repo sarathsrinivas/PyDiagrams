@@ -45,8 +45,8 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 		    double fac, double kf, unsigned int ke_flag, double *work,
 		    unsigned long work_sz)
 {
-	double *q_ct, *kxx_gma, *kxx_fq, *A1, *A2, *B1, *B2, *C, *Iqe, *IIe, *kl12_ct, *ktx12,
-	    *ktt12, *fqe, *var_fq, *var_gma12;
+	double *q_ct, *kxx_gma, *kxx_fq, *A1, *A2, *B1, *B2, *C, *Iqe, *IIe, *kl12_ct, *kl12_ct_p,
+	    *ktx12, *ktt12, *fqe, *var_fq, *var_gma12;
 	unsigned long sz_alloc, work_sz_chk, npke, npq;
 
 	work_sz_chk = get_work_sz_rhs_param(nke, dimke, nq, dimq);
