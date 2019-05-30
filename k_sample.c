@@ -7,7 +7,8 @@
 
 #define PI (3.1415926535897)
 
-void fill_ke_sample_zs_ct(double *ke_ct, unsigned long ns, double *st, double *en, unsigned int seed)
+void fill_ke_sample_zs_ct(double *ke_ct, unsigned long ns, double *st, double *en,
+			  unsigned int seed)
 {
 	unsigned long i, dim;
 	double dl, dlp, P, th_P, phi_P, th_dlp, phi_dlp, dlz, dlpx, dlpy, dlpz, Px, Py, Pz;
@@ -51,9 +52,59 @@ void fill_ke_sample_zs_ct(double *ke_ct, unsigned long ns, double *st, double *e
 	}
 }
 
+void fill_ke_sample_zs_ct_exp(double *ke_ct, unsigned long ns, double *st, double *en, double sig,
+			      double a, unsigned int seed)
+{
+	unsigned long i, dim;
+	double dl, dlp, P, th_P, phi_P, th_dlp, phi_dlp, dlz, dlpx, dlpy, dlpz, Px, Py, Pz;
+	dsfmt_t drng;
+	dim = 7;
+
+	dsfmt_init_gen_rand(&drng, seed);
+
+	for (i = 0; i < ns; i++) {
+
+		dl = dsfmt_genrand_close_open(&drng);
+		dlp = dsfmt_genrand_close_open(&drng);
+		P = dsfmt_genrand_close_open(&drng);
+
+		dl = a * fabs(1.0 + log(dl) * sig) + (1.0 - a) * dl;
+		dlp = a * fabs(1.0 + log(dlp) * sig) + (1.0 - a) * dlp;
+		P = a * fabs(1.0 + log(P) * sig) + (1.0 - a) * P;
+
+		dl = st[0] + (en[0] - st[0]) * pow(dl, 1.0 / 3.0);
+		dlp = st[1] + (en[1] - st[1]) * pow(dlp, 1.0 / 3.0);
+		P = st[2] + (en[2] - st[2]) * pow(P, 1.0 / 3.0);
+
+		th_dlp = acos(1 - 2 * dsfmt_genrand_close_open(&drng));
+		th_P = acos(1 - 2 * dsfmt_genrand_close_open(&drng));
+		phi_dlp = 2 * PI * dsfmt_genrand_close_open(&drng);
+		phi_P = 2 * PI * dsfmt_genrand_close_open(&drng);
+
+		dlz = dl;
+
+		dlpx = dlp * cos(phi_dlp) * sin(th_dlp);
+		dlpy = dlp * sin(phi_dlp) * sin(th_dlp);
+		dlpz = dlp * cos(th_dlp);
+
+		Px = P * cos(phi_P) * sin(th_P);
+		Py = P * sin(phi_P) * sin(th_P);
+		Pz = P * cos(th_P);
+
+		ke_ct[dim * i + 0] = dlz;
+		ke_ct[dim * i + 1] = dlpx;
+		ke_ct[dim * i + 2] = dlpy;
+		ke_ct[dim * i + 3] = dlpz;
+		ke_ct[dim * i + 4] = Px;
+		ke_ct[dim * i + 5] = Py;
+		ke_ct[dim * i + 6] = Pz;
+	}
+}
+
 void get_kep_sample_zsp_ct(double *kep_ct, const double *ke_ct, unsigned long nke, unsigned int dim)
 {
-	double dl, dlp, P, dl_dlp, P_dlp, P_dl, phi_dl, phi_P, dlx, dlz, dly, dlpz, dlpx, dlpy, Px, Py, Pz;
+	double dl, dlp, P, dl_dlp, P_dlp, P_dl, phi_dl, phi_P, dlx, dlz, dly, dlpz, dlpx, dlpy, Px,
+	    Py, Pz;
 	unsigned long i;
 
 	for (i = 0; i < nke; i++) {
@@ -74,8 +125,9 @@ void get_kep_sample_zsp_ct(double *kep_ct, const double *ke_ct, unsigned long nk
 		P_dl = acos((Pz * dlz) / (P * dl));
 		P_dlp = acos((Px * dlpx + Py * dlpy + Pz * dlpz) / (P * dlp));
 
-		phi_dl = acos((cos(P_dl) - cos(P_dlp) * cos(dl_dlp)) / (sin(P_dlp) * sin(dl_dlp)));
-		phi_P = 0;
+		phi_P = 0.4;
+		phi_dl = acos((cos(P_dl) - cos(P_dlp) * cos(dl_dlp)) / (sin(P_dlp) * sin(dl_dlp)))
+			 + phi_P;
 
 		dlpz = dlp;
 
@@ -157,8 +209,8 @@ void print_mom(const double *k, unsigned long nk, unsigned int dimk, FILE *out)
 
 double test_zs_zsp_rot(unsigned long nke, int seed)
 {
-	double *ke_ct, *kep_ct, st[3], en[3], kmax, dl[2], dlp[2], P[2], dl_dlp[2], P_dl[2], P_dlp[2], dlx,
-	    dly, dlz, dlpx, dlpy, dlpz, Px, Py, Pz, err;
+	double *ke_ct, *kep_ct, st[3], en[3], kmax, dl[2], dlp[2], P[2], dl_dlp[2], P_dl[2],
+	    P_dlp[2], dlx, dly, dlz, dlpx, dlpy, dlpz, Px, Py, Pz, err;
 	unsigned int dimke;
 	unsigned long i;
 
