@@ -95,8 +95,10 @@ void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const doub
 
 void get_fq_as_samples(double *fq, double *var_fq, const double *wt_gma_zs,
 		       const double *wt_gma_zsp, const double *A1, const double *A2,
-		       const double *B1, const double *B2, const double *C, const double *var_gma12,
-		       unsigned int ke_flag, unsigned long nq, unsigned long nke)
+		       const double *B1, const double *B2, const double *C, const double *A1p,
+		       const double *A2p, const double *B1p, const double *B2p, const double *Cp,
+		       const double *var_gma12, unsigned int ke_flag, unsigned long nq,
+		       unsigned long nke)
 {
 	double *gma1_zs, *gma2_zs, *gma1_zsp, *gma2_zsp;
 	int N, K, LDA, INCX, INCY;
@@ -115,8 +117,8 @@ void get_fq_as_samples(double *fq, double *var_fq, const double *wt_gma_zs,
 	interpolate_gma(gma1_zs, wt_gma_zs, A1, B1, C, nq, nke);
 	interpolate_gma(gma2_zs, wt_gma_zs, A2, B2, C, nq, nke);
 
-	interpolate_gma(gma1_zsp, wt_gma_zsp, A1, B1, C, nq, nke);
-	interpolate_gma(gma2_zsp, wt_gma_zsp, A2, B2, C, nq, nke);
+	interpolate_gma(gma1_zsp, wt_gma_zsp, A1p, B1p, Cp, nq, nke);
+	interpolate_gma(gma2_zsp, wt_gma_zsp, A2p, B2p, Cp, nq, nke);
 
 	ALPHA = -1.0;
 	N = nke * nq;
@@ -332,9 +334,9 @@ double test_get_zs_fq_samples(unsigned long nke, unsigned long nq, int seed)
 double test_get_zs_fq_as_samples(unsigned long nke, unsigned long nq, int seed)
 {
 	double *kl1_ct, *kl2_ct, *ke_ct, *kl1p_ct, *kl2p_ct, *kep_ct, *q, *q_ct, *wt_gma_zs,
-	    *wt_gma_zsp, *ktx1_zs, *ktx2_zs, *ktx1_zsp, *ktx2_zsp, pke[8], gma1_zs, gma2_zs,
-	    gma1_zsp, gma2_zsp, *fq, *fq2, kmax, st[3], en[3], tmp1, tmp2, *A1, *A2, *B1, *B2, *C,
-	    *A1p, *A2p, *B1p, *B2p, *Cp, err;
+	    *wt_gma_zsp, *ktx1_zs, *ktx2_zs, *ktx1_zsp, *ktx2_zsp, pke_zs[8], pke_zsp[8], gma1_zs,
+	    gma2_zs, gma1_zsp, gma2_zsp, *fq, *fq2, kmax, st[3], en[3], tmp1, tmp2, *A1, *A2, *B1,
+	    *B2, *C, *A1p, *A2p, *B1p, *B2p, *Cp, err;
 	unsigned int dimke, dimq;
 	unsigned long np, i, j, l;
 	dsfmt_t drng;
@@ -365,6 +367,11 @@ double test_get_zs_fq_as_samples(unsigned long nke, unsigned long nq, int seed)
 	ktx2_zs = malloc(nke * nq * sizeof(double));
 	assert(ktx2_zs);
 
+	ktx1_zsp = malloc(nke * nq * sizeof(double));
+	assert(ktx1_zsp);
+	ktx2_zsp = malloc(nke * nq * sizeof(double));
+	assert(ktx2_zsp);
+
 	fq = malloc(nq * nke * sizeof(double));
 	assert(fq);
 	fq2 = malloc(nq * nke * sizeof(double));
@@ -380,6 +387,17 @@ double test_get_zs_fq_as_samples(unsigned long nke, unsigned long nq, int seed)
 	assert(B2);
 	C = malloc(nke * nq * sizeof(double));
 	assert(C);
+
+	A1p = malloc(nke * nq * sizeof(double));
+	assert(A1p);
+	A2p = malloc(nke * nq * sizeof(double));
+	assert(A2p);
+	B1p = malloc(nke * nke * sizeof(double));
+	assert(B1p);
+	B2p = malloc(nke * nke * sizeof(double));
+	assert(B2p);
+	Cp = malloc(nke * nq * sizeof(double));
+	assert(Cp);
 
 	kmax = 2.0;
 
@@ -399,7 +417,8 @@ double test_get_zs_fq_as_samples(unsigned long nke, unsigned long nq, int seed)
 	dsfmt_init_gen_rand(&drng, seed + 95);
 
 	for (i = 0; i < np; i++) {
-		pke[i] = 0.1 + 1.5 * dsfmt_genrand_close_open(&drng);
+		pke_zs[i] = 0.1 + 1.5 * dsfmt_genrand_close_open(&drng);
+		pke_zsp[i] = 0.1 + 1.5 * dsfmt_genrand_close_open(&drng);
 	}
 
 	dsfmt_init_gen_rand(&drng, seed + 9123);
@@ -413,8 +432,11 @@ double test_get_zs_fq_as_samples(unsigned long nke, unsigned long nq, int seed)
 
 		get_zs_loop_mom_7d_ct(kl1_ct, kl2_ct, &ke_ct[dimke * i], dimke, q_ct, nq, dimq);
 
-		get_krn_se_ard(ktx1_zs, kl1_ct, ke_ct, nq, nke, dimke, pke, np);
-		get_krn_se_ard(ktx2_zs, kl2_ct, ke_ct, nq, nke, dimke, pke, np);
+		get_krn_se_ard(ktx1_zs, kl1_ct, ke_ct, nq, nke, dimke, pke_zs, np);
+		get_krn_se_ard(ktx2_zs, kl2_ct, ke_ct, nq, nke, dimke, pke_zs, np);
+
+		get_krn_se_ard(ktx1_zsp, kl1_ct, ke_ct, nq, nke, dimke, pke_zsp, np);
+		get_krn_se_ard(ktx2_zsp, kl2_ct, ke_ct, nq, nke, dimke, pke_zsp, np);
 
 		for (l = 0; l < nq; l++) {
 
@@ -426,19 +448,24 @@ double test_get_zs_fq_as_samples(unsigned long nke, unsigned long nq, int seed)
 				gma1_zs += wt_gma_zs[j] * ktx1_zs[l * nke + j];
 				gma2_zs += wt_gma_zs[j] * ktx2_zs[l * nke + j];
 
-				gma1_zsp += wt_gma_zsp[j] * ktx1_zs[l * nke + j];
-				gma2_zsp += wt_gma_zsp[j] * ktx2_zs[l * nke + j];
+				gma1_zsp += wt_gma_zsp[j] * ktx1_zsp[l * nke + j];
+				gma2_zsp += wt_gma_zsp[j] * ktx2_zsp[l * nke + j];
 			}
 
 			fq[i * nq + l] = (gma1_zs - gma1_zsp) * (gma2_zs - gma2_zsp);
 		}
 	}
 
-	get_zs_covar_Aeq(A1, A2, ke_ct, q_ct, nke, dimke, nq, dimq, pke, np);
-	get_zs_covar_Bes(B1, B2, ke_ct, ke_ct, nke, dimke, pke, np);
-	get_zs_covar_Cqs(C, ke_ct, q_ct, nke, dimke, nq, dimq, pke, np);
+	get_zs_covar_Aeq(A1, A2, ke_ct, q_ct, nke, dimke, nq, dimq, pke_zs, np);
+	get_zs_covar_Bes(B1, B2, ke_ct, ke_ct, nke, dimke, pke_zs, np);
+	get_zs_covar_Cqs(C, ke_ct, q_ct, nke, dimke, nq, dimq, pke_zs, np);
 
-	get_fq_as_samples(fq2, NULL, wt_gma_zs, wt_gma_zsp, A1, A2, B1, B2, C, NULL, 0, nq, nke);
+	get_zs_covar_Aeq(A1p, A2p, ke_ct, q_ct, nke, dimke, nq, dimq, pke_zsp, np);
+	get_zs_covar_Bes(B1p, B2p, ke_ct, ke_ct, nke, dimke, pke_zsp, np);
+	get_zs_covar_Cqs(Cp, ke_ct, q_ct, nke, dimke, nq, dimq, pke_zsp, np);
+
+	get_fq_as_samples(fq2, NULL, wt_gma_zs, wt_gma_zsp, A1, A2, B1, B2, C, A1p, A2p, B1p, B2p,
+			  Cp, NULL, 0, nq, nke);
 
 	err = 0;
 	for (i = 0; i < nq * nke; i++) {
@@ -448,6 +475,11 @@ double test_get_zs_fq_as_samples(unsigned long nke, unsigned long nq, int seed)
 		err += fabs(fq[i] - fq2[i]);
 	}
 
+	free(Cp);
+	free(B2p);
+	free(B1p);
+	free(A2p);
+	free(A1p);
 	free(C);
 	free(B2);
 	free(B1);
@@ -455,6 +487,8 @@ double test_get_zs_fq_as_samples(unsigned long nke, unsigned long nq, int seed)
 	free(A1);
 	free(fq2);
 	free(fq);
+	free(ktx2_zsp);
+	free(ktx1_zsp);
 	free(ktx2_zs);
 	free(ktx1_zs);
 	free(wt_gma_zsp);

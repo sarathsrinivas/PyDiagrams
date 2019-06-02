@@ -5,6 +5,7 @@
 #include <lib_rng/lib_rng.h>
 #include <lib_gpr/lib_gpr.h>
 #include <lib_pots/lib_pots.h>
+#include <atlas/blas.h>
 #include "lib_flow.h"
 
 void get_rhs_block(double *gma, double *var_gma, const double *gma0, const double *var_gma0,
@@ -80,6 +81,120 @@ void get_rhs_block(double *gma, double *var_gma, const double *gma0, const doubl
 
 	free(wt_fq);
 	free(wt_gma);
+	free(lknxx_fq);
+	free(lknxx_gma);
+}
+
+void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs,
+			const double *var_gma0_zs, const double *gma0_zsp,
+			const double *var_gma0_zsp, unsigned long nke, struct rhs_diff_param *par)
+{
+	double *lknxx_gma, *kxx_gma_zs, *kxx_gma_zsp, *wt_gma_zs, *wt_gma_zsp, *var_gma12_zs,
+	    *var_gma12_zsp, *var_gma12, *ke_ct, *q_ct, *pke_ct_zs, *pke_ct_zsp, *wt_fq, *var_fq,
+	    *A1, *B1, *C, *A2, *B2, *A1p, *B1p, *Cp, *A2p, *B2p, *lknxx_fq, *kxx_fq, *Iqe, *q_sph,
+	    *pq_sph, fac, kf, *IIe, *fqe, *ktt12_zs, *ktx12_zs, *ktt12_zsp, *ktx12_zsp, *kl12_ct,
+	    ALPHA;
+	unsigned long nq, nth, i;
+	unsigned int dimq, dimke, ke_flag;
+	int N, INCX, INCY;
+
+	ke_ct = par->ke_ct;
+	q_ct = par->q_ct;
+	q_sph = par->q_sph;
+
+	kxx_gma_zs = par->kxx_gma_zs;
+	kxx_gma_zsp = par->kxx_gma_zsp;
+	kxx_fq = par->kxx_fq;
+
+	Iqe = par->Iqe;
+	IIe = par->IIe;
+
+	pke_ct_zs = par->pke_ct_zs;
+	pke_ct_zsp = par->pke_ct_zsp;
+	pq_sph = par->pq_sph;
+
+	A1 = par->A1;
+	B1 = par->B1;
+	A2 = par->A2;
+	B2 = par->B2;
+	C = par->C;
+
+	A1p = par->A1p;
+	B1p = par->B1p;
+	A2p = par->A2p;
+	B2p = par->B2p;
+	Cp = par->Cp;
+
+	fac = par->fac;
+	kf = par->kf;
+
+	nth = par->nth;
+	nq = par->nq;
+	dimq = par->dimq;
+	dimke = par->dimke;
+	ke_flag = par->ke_flag;
+
+	ktt12_zs = par->ktt12_zs;
+	ktx12_zs = par->ktx12_zs;
+
+	kl12_ct = par->kl12_ct;
+
+	ktt12_zsp = par->ktt12_zsp;
+	ktx12_zsp = par->ktx12_zsp;
+
+	fqe = par->fqe;
+	var_fq = par->var_fq;
+	var_gma12_zs = par->var_gma12_zs;
+	var_gma12_zsp = par->var_gma12_zsp;
+	var_gma12 = par->var_gma12;
+
+	lknxx_fq = malloc(nq * nq * sizeof(double));
+	assert(lknxx_fq);
+	lknxx_gma = malloc(nke * nke * sizeof(double));
+	assert(lknxx_gma);
+
+	wt_gma_zs = malloc(nke * sizeof(double));
+	assert(wt_gma_zs);
+	wt_gma_zsp = malloc(nke * sizeof(double));
+	assert(wt_gma_zsp);
+	wt_fq = malloc(nke * nq * sizeof(double));
+	assert(wt_fq);
+
+	get_noise_covar_chd(lknxx_gma, kxx_gma_zs, var_gma0_zs, nke);
+
+	get_gma_weight(wt_gma_zs, lknxx_gma, gma0_zs, nke);
+
+	get_var_mat_chd(var_gma12_zs, ktt12_zs, ktx12_zs, lknxx_gma, 2 * nq, nke);
+
+	get_noise_covar_chd(lknxx_gma, kxx_gma_zsp, var_gma0_zsp, nke);
+
+	get_gma_weight(wt_gma_zsp, lknxx_gma, gma0_zsp, nke);
+
+	get_var_mat_chd(var_gma12_zsp, ktt12_zsp, ktx12_zsp, lknxx_gma, 2 * nq, nke);
+
+	N = 4 * nq * nq;
+	INCX = 1;
+	INCY = 1;
+	ALPHA = 1.0;
+
+	dcopy_(&N, var_gma12_zsp, &INCX, var_gma12, &INCY);
+
+	daxpy_(&N, &ALPHA, var_gma12_zs, &INCX, var_gma12, &INCY);
+
+	get_fq_as_samples(fqe, var_fq, wt_gma_zs, wt_gma_zsp, A1, B1, A2, B2, C, A1p, B1p, A2p, B2p,
+			  Cp, var_gma12, ke_flag, nq, nke);
+
+	get_noise_covar_chd(lknxx_fq, kxx_fq, var_fq, nq);
+
+	get_fq_weights_2(wt_fq, lknxx_fq, fqe, nq, nke);
+
+	get_gma_gpr_mean(gma, Iqe, wt_fq, nke, nq);
+
+	get_gma_gpr_var(var_gma, IIe, Iqe, lknxx_fq, nq, nke);
+
+	free(wt_fq);
+	free(wt_gma_zs);
+	free(wt_gma_zsp);
 	free(lknxx_fq);
 	free(lknxx_gma);
 }

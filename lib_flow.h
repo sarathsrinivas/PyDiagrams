@@ -11,6 +11,22 @@ struct rhs_param {
 	unsigned long nq, nth;
 };
 
+struct rhs_diff_param {
+	double *ke_ct, *q_ct, *q_sph, *pke_ct_zs, *pke_ct_zsp, *pq_sph, 
+		   *kxx_gma_zs, *kxx_gma_zsp, *kxx_fq,
+		   *ktt12_zs, *ktx12_zs, *kl12_ct,
+		   *ktt12_zsp, *ktx12_zsp,
+		   *var_gma12_zsp, *var_gma12_zs, *var_gma12,
+		   *A1, *B1, *A2, *B2, *C,
+		   *A1p, *B1p, *A2p, *B2p, *Cp,
+		   *Iqe, *IIe,
+		   *fqe, *var_fq;
+	double fac, kf;
+	unsigned int dimke, dimq, ke_flag;
+	unsigned long nq, nth;
+};
+
+
 struct rhs_ph_param {
 	double *ke_ct, *kep_ct, *q_ct, *q_sph, *pke_ct, *pq_sph,
 		   *kxx_gma, *kxx_fq,
@@ -161,7 +177,8 @@ void interpolate_gma(double *gma, const double *wt_gma, const double *Aeq, const
 void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const double *A1eq, const double *B1es, const double *A2eq, const double *B2es, const double *Csq,
 		       const double *var_gma12, unsigned int ke_flag, unsigned long nq, unsigned long nke);
 void get_fq_as_samples(double *fq, double *var_fq, const double *wt_gma_zs, const double *wt_gma_zsp, const double *A1, const double *A2,
-		       const double *B1, const double *B2, const double *C, const double *var_gma12, unsigned int ke_flag, unsigned long nq, unsigned long nke);
+		       const double *B1, const double *B2, const double *C, const double *A1p, const double *A2p, const double *B1p, const double *B2p, const double *Cp,
+		       const double *var_gma12, unsigned int ke_flag, unsigned long nq, unsigned long nke);
 void get_var_fq(double *var_fq, const double *gma1, const double *gma2, const double *var_gma12, unsigned long nq);
 
 /* TESTS FOR STAGE ONE */
@@ -184,9 +201,15 @@ double test_noisy_inverse(unsigned long nq, unsigned long nke, double sigma2, in
 unsigned long get_work_sz_rhs_param(unsigned long nke, unsigned int dimke, unsigned long nq, unsigned long dimq);
 void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, unsigned int dimke, double *q_sph, unsigned long nq, unsigned int dimq, double *pke_ct,
 		    double *pq_sph, unsigned long nqr, unsigned long nth, unsigned long nphi, double fac, double kf, unsigned int ke_flag, double *work, unsigned long work_sz);
+unsigned long get_work_sz_rhs_diff_param(unsigned long nke, unsigned int dimke, unsigned long nq, unsigned int dimq);
+void init_rhs_diff_param(struct rhs_diff_param *par, double *ke_ct, unsigned long nke, unsigned int dimke, double *q_sph, unsigned long nq, unsigned int dimq,
+			 double *pke_ct_zs, double *pke_ct_zsp, double *pq_sph, unsigned long nqr, unsigned long nth, unsigned long nphi, double fac, double kf,
+			 unsigned int ke_flag, double *work, unsigned long work_sz);
 
 /* RHS */
 void get_rhs_block(double *gma, double *var_gma, const double *gma0, const double *var_gma0, unsigned long nke, struct rhs_param *par);
+void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs, const double *var_gma0_zs, const double *gma0_zsp,
+			const double *var_gma0_zsp, unsigned long nke, struct rhs_diff_param *par);
 void regulate_rhs_gma(double *gma, const double *ke_ct, unsigned long nke, unsigned int dimke, double kmax, double eps);
 void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *param);
 void flow_rhs_ph(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *param);
