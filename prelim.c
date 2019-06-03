@@ -208,7 +208,7 @@ void init_rhs_diff_param(struct rhs_diff_param *par, double *ke_ct, unsigned lon
 	    *ktt12_zsp, *fqe, *var_fq, *var_gma12_zs, *var_gma12_zsp, *var_gma12;
 	unsigned long sz_alloc, work_sz_chk, npke, npq;
 
-	work_sz_chk = get_work_sz_rhs_param(nke, dimke, nq, dimq);
+	work_sz_chk = get_work_sz_rhs_diff_param(nke, dimke, nq, dimq);
 
 	assert(work);
 	assert(work_sz == work_sz_chk && "WORK SIZE DONT MATCH!");
