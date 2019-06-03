@@ -94,6 +94,7 @@ double test_mom_closure(double kmax, unsigned long ns, int seed);
 double test_gpr_fit(unsigned long ns, unsigned long nt, double kf, int seed);
 
 /* MOMENTUM SAMPLING */
+void fill_ke_sample_zs_ct_box(double *ke_ct, unsigned long ns, double *st, double *en, unsigned int seed);
 void fill_ke_sample_zs_ct(double *ke_ct, unsigned long ns, double *st, double *en, unsigned int seed);
 void fill_ke_sample_zs_ct_exp(double *ke_ct, unsigned long ns, double *st, double *en, double sig, double a, unsigned int seed);
 void get_kep_sample_zsp_ct(double *kep_ct, const double *ke_ct, unsigned long nke, unsigned int dim);

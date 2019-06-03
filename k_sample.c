@@ -7,6 +7,38 @@
 
 #define PI (3.1415926535897)
 
+void fill_ke_sample_zs_ct_box(double *ke_ct, unsigned long ns, double *st, double *en,
+			      unsigned int seed)
+{
+	unsigned long i, dim;
+	double dl, dlp, P, th_P, phi_P, th_dlp, phi_dlp, dlz, dlpx, dlpy, dlpz, Px, Py, Pz;
+	dsfmt_t drng;
+	dim = 7;
+
+	dsfmt_init_gen_rand(&drng, seed);
+
+	for (i = 0; i < ns; i++) {
+
+		dlz = st[0] + (en[0] - st[0]) * dsfmt_genrand_close_open(&drng);
+
+		dlpx = st[1] + (en[1] - st[1]) * dsfmt_genrand_close_open(&drng);
+		dlpy = st[1] + (en[1] - st[1]) * dsfmt_genrand_close_open(&drng);
+		dlpz = st[1] + (en[1] - st[1]) * dsfmt_genrand_close_open(&drng);
+
+		Px = st[2] + (en[2] - st[2]) * dsfmt_genrand_close_open(&drng);
+		Py = st[2] + (en[2] - st[2]) * dsfmt_genrand_close_open(&drng);
+		Pz = st[2] + (en[2] - st[2]) * dsfmt_genrand_close_open(&drng);
+
+		ke_ct[dim * i + 0] = dlz;
+		ke_ct[dim * i + 1] = dlpx;
+		ke_ct[dim * i + 2] = dlpy;
+		ke_ct[dim * i + 3] = dlpz;
+		ke_ct[dim * i + 4] = Px;
+		ke_ct[dim * i + 5] = Py;
+		ke_ct[dim * i + 6] = Pz;
+	}
+}
+
 void fill_ke_sample_zs_ct(double *ke_ct, unsigned long ns, double *st, double *en,
 			  unsigned int seed)
 {
