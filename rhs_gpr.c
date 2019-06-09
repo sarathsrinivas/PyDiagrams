@@ -199,11 +199,11 @@ void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs,
 	free(lknxx_gma);
 }
 
-void regulate_rhs_gma(double *gma, const double *ke_ct, unsigned long nke, unsigned int dimke,
+void get_regulator_ke(double *reg, const double *ke_ct, unsigned long nke, unsigned int dimke,
 		      double kmax, double eps)
 {
 
-	double dl, dl2, dlp2, P2, dlpx, dlp, dlpy, dlpz, Px, Py, Pz, reg;
+	double dl, dl2, dlp2, P, P2, dlpx, dlp, dlpy, dlpz, Px, Py, Pz, max;
 	unsigned long i;
 
 	for (i = 0; i < nke; i++) {
@@ -217,11 +217,12 @@ void regulate_rhs_gma(double *gma, const double *ke_ct, unsigned long nke, unsig
 		Pz = ke_ct[dimke * i + 6];
 
 		dlp = sqrt(dlpx * dlpx + dlpy * dlpy + dlpz * dlpz);
-		P2 = sqrt(Px * Px + Py * Py + Pz * Pz);
+		P = sqrt(Px * Px + Py * Py + Pz * Pz);
 
-		reg = fd_reg(dl, kmax, eps) * fd_reg(dlp, kmax, eps);
+		max = (dl > dlp) ? dl : dlp;
+		max = (P > max) ? P : max;
 
-		gma[i] *= reg;
+		reg[i] = fd_reg(max, kmax, eps);
 	}
 }
 

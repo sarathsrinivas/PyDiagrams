@@ -61,7 +61,6 @@ void fill_zs_loop_mom(double *kl1, double *kl2, unsigned int dim, const double *
 double get_zs_energy(const double *ke, unsigned int dim);
 double get_zsp_energy(const double *ke, unsigned int dim);
 void sph_ct_mom6_zs( double *ke_ct, const double *ke, unsigned int dim, unsigned long ns);
-void sph_ct_mom_ball(double *q_ct, const double *q, unsigned int dimq, unsigned long nq);
 void get_zs_reg_limits(double kmax, const double *ke, double phi_dlp, double th_q, double phi_q,  double *lims);
 
 /* Phase Spaces */
@@ -211,6 +210,6 @@ void init_rhs_diff_param(struct rhs_diff_param *par, double *ke_ct, unsigned lon
 void get_rhs_block(double *gma, double *var_gma, const double *gma0, const double *var_gma0, unsigned long nke, struct rhs_param *par);
 void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs, const double *var_gma0_zs, const double *gma0_zsp,
 			const double *var_gma0_zsp, unsigned long nke, struct rhs_diff_param *par);
-void regulate_rhs_gma(double *gma, const double *ke_ct, unsigned long nke, unsigned int dimke, double kmax, double eps);
+void get_regulator_ke(double *reg, const double *ke_ct, unsigned long nke, unsigned int dimke, double kmax, double eps);
 void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *param);
 void flow_rhs_ph(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *param);
