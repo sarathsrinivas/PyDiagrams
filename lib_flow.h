@@ -210,6 +210,7 @@ void init_rhs_diff_param(struct rhs_diff_param *par, double *ke_ct, unsigned lon
 void get_rhs_block(double *gma, double *var_gma, const double *gma0, const double *var_gma0, unsigned long nke, struct rhs_param *par);
 void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs, const double *var_gma0_zs, const double *gma0_zsp,
 			const double *var_gma0_zsp, unsigned long nke, struct rhs_diff_param *par);
-void get_regulator_ke(double *reg, const double *ke_ct, unsigned long nke, unsigned int dimke, double kmax, double eps);
+void get_regulator_ke_max(double *reg, const double *ke_ct, unsigned long nke, unsigned int dimke, double kmax, double eps);
+void get_regulator_ke_sum(double *reg, const double *ke_ct, unsigned long nke, unsigned int dimke, double kmax, double eps);
 void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *param);
 void flow_rhs_ph(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *param);

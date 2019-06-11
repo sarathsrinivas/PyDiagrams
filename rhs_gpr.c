@@ -199,8 +199,8 @@ void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs,
 	free(lknxx_gma);
 }
 
-void get_regulator_ke(double *reg, const double *ke_ct, unsigned long nke, unsigned int dimke,
-		      double kmax, double eps)
+void get_regulator_ke_max(double *reg, const double *ke_ct, unsigned long nke, unsigned int dimke,
+			  double kmax, double eps)
 {
 
 	double dl, dl2, dlp2, P, P2, dlpx, dlp, dlpy, dlpz, Px, Py, Pz, max;
@@ -223,6 +223,32 @@ void get_regulator_ke(double *reg, const double *ke_ct, unsigned long nke, unsig
 		max = (P > max) ? P : max;
 
 		reg[i] = fd_reg(max, kmax, eps);
+	}
+}
+
+void get_regulator_ke_sum(double *reg, const double *ke_ct, unsigned long nke, unsigned int dimke,
+			  double kmax, double eps)
+{
+
+	double dl, dl2, dlp2, P, P2, dlpx, dlp, dlpy, dlpz, Px, Py, Pz, sum;
+	unsigned long i;
+
+	for (i = 0; i < nke; i++) {
+
+		dl = ke_ct[dimke * i + 0];
+		dlpx = ke_ct[dimke * i + 1];
+		dlpy = ke_ct[dimke * i + 2];
+		dlpz = ke_ct[dimke * i + 3];
+		Px = ke_ct[dimke * i + 4];
+		Py = ke_ct[dimke * i + 5];
+		Pz = ke_ct[dimke * i + 6];
+
+		dlp = sqrt(dlpx * dlpx + dlpy * dlpy + dlpz * dlpz);
+		P = sqrt(Px * Px + Py * Py + Pz * Pz);
+
+		sum = dl + dlp + P;
+
+		reg[i] = fd_reg(sum, kmax, eps);
 	}
 }
 
