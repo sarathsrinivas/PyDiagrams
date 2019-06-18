@@ -93,6 +93,50 @@ void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const doub
 	free(gma1);
 }
 
+void get_fq_samples_reg(double *fq_reg, double *var_fq, const double *wt_gma, const double *A1,
+			const double *B1, const double *A2, const double *B2, const double *C,
+			const double *var_gma12, const double *reg12_mat, double kmax, double eps,
+			unsigned int ke_flag, unsigned long nq, unsigned long nke)
+
+{
+	double *gma1, *gma2, *fq;
+	int N, K, LDA, INCX, INCY;
+	unsigned char UPLO;
+	double ALPHA, BETA;
+
+	gma1 = malloc(nq * nke * sizeof(double));
+	assert(gma1);
+	gma2 = malloc(nq * nke * sizeof(double));
+	assert(gma2);
+
+	fq = malloc(nq * nke * sizeof(double));
+	assert(fq);
+
+	N = nke * nq;
+	K = 0;
+	LDA = 1;
+	INCX = 1;
+	INCY = 1;
+	UPLO = 'L';
+	ALPHA = 1.0;
+	BETA = 0.0;
+
+	interpolate_gma(gma1, wt_gma, A1, B1, C, nq, nke);
+	interpolate_gma(gma2, wt_gma, A2, B2, C, nq, nke);
+
+	dsbmv_(&UPLO, &N, &K, &ALPHA, gma1, &LDA, gma2, &INCX, &BETA, fq, &INCY);
+
+	dsbmv_(&UPLO, &N, &K, &ALPHA, fq, &LDA, reg12_mat, &INCX, &BETA, fq_reg, &INCY);
+
+	if (var_gma12 && var_fq) {
+		get_var_fq(var_fq, &gma1[ke_flag * nq], &gma2[ke_flag * nq], var_gma12, nq);
+	}
+
+	free(gma2);
+	free(gma1);
+	free(fq);
+}
+
 void get_fq_as_samples(double *fq, double *var_fq, const double *wt_gma_zs,
 		       const double *wt_gma_zsp, const double *A1, const double *A2,
 		       const double *B1, const double *B2, const double *C, const double *A1p,

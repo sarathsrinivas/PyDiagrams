@@ -176,6 +176,8 @@ double test_zs_gma_covar(unsigned long nke, unsigned long nq, int seed);
 void interpolate_gma(double *gma, const double *wt_gma, const double *Aeq, const double *Bes, const double *Csq, unsigned long nq, unsigned long nke);
 void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const double *A1eq, const double *B1es, const double *A2eq, const double *B2es, const double *Csq,
 		       const double *var_gma12, unsigned int ke_flag, unsigned long nq, unsigned long nke);
+void get_fq_samples_reg(double *fq_reg, double *var_fq, const double *wt_gma, const double *A1, const double *B1, const double *A2, const double *B2, const double *C,
+			const double *var_gma12, const double *reg12_mat, double kmax, double eps, unsigned int ke_flag, unsigned long nq, unsigned long nke);
 void get_fq_as_samples(double *fq, double *var_fq, const double *wt_gma_zs, const double *wt_gma_zsp, const double *A1, const double *A2,
 		       const double *B1, const double *B2, const double *C, const double *A1p, const double *A2p, const double *B1p, const double *B2p, const double *Cp,
 		       const double *var_gma12, unsigned int ke_flag, unsigned long nq, unsigned long nke);
