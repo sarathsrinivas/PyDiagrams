@@ -9,6 +9,79 @@
 #include <lib_pots/lib_pots.h>
 #include "lib_flow.h"
 
+void get_regulator_ke_max(double *reg, const double *ke_ct, unsigned long nke, unsigned int dimke,
+			  double kmax, double eps)
+{
+
+	double dl, dl2, dlp2, P, P2, dlpx, dlp, dlpy, dlpz, Px, Py, Pz, max;
+	unsigned long i;
+
+	for (i = 0; i < nke; i++) {
+
+		dl = ke_ct[dimke * i + 0];
+		dlpx = ke_ct[dimke * i + 1];
+		dlpy = ke_ct[dimke * i + 2];
+		dlpz = ke_ct[dimke * i + 3];
+		Px = ke_ct[dimke * i + 4];
+		Py = ke_ct[dimke * i + 5];
+		Pz = ke_ct[dimke * i + 6];
+
+		dlp = sqrt(dlpx * dlpx + dlpy * dlpy + dlpz * dlpz);
+		P = sqrt(Px * Px + Py * Py + Pz * Pz);
+
+		max = (dl > dlp) ? dl : dlp;
+		max = (P > max) ? P : max;
+
+		reg[i] = fd_reg(max, kmax, eps);
+	}
+}
+
+void get_regulator_ke_sum(double *reg, const double *ke_ct, unsigned long nke, unsigned int dimke,
+			  double kmax, double eps)
+{
+
+	double dl, dl2, dlp2, P, P2, dlpx, dlp, dlpy, dlpz, Px, Py, Pz, sum;
+	unsigned long i;
+
+	for (i = 0; i < nke; i++) {
+
+		dl = ke_ct[dimke * i + 0];
+		dlpx = ke_ct[dimke * i + 1];
+		dlpy = ke_ct[dimke * i + 2];
+		dlpz = ke_ct[dimke * i + 3];
+		Px = ke_ct[dimke * i + 4];
+		Py = ke_ct[dimke * i + 5];
+		Pz = ke_ct[dimke * i + 6];
+
+		dlp = sqrt(dlpx * dlpx + dlpy * dlpy + dlpz * dlpz);
+		P = sqrt(Px * Px + Py * Py + Pz * Pz);
+
+		sum = dl + dlp + P;
+
+		reg[i] = fd_reg(sum, kmax, eps);
+	}
+}
+
+void get_reg_mat_loop_zs(double *reg1_mat, double *reg2_mat, double kmax, double eps,
+			 const double *ke_ct, unsigned long nke, unsigned int dimke,
+			 const double *q_ct, unsigned long nq, unsigned int dimq)
+{
+	double *kl1, *kl2;
+	unsigned long i;
+
+	kl1 = malloc(nq * dimke * sizeof(double));
+	assert(kl1);
+	kl2 = malloc(nq * dimke * sizeof(double));
+	assert(kl2);
+
+	for (i = 0; i < nke; i++) {
+		get_zs_loop_mom_7d_ct(kl1, kl2, &ke_ct[dimke * i], dimke, q_ct, nq, dimq);
+
+		get_regulator_ke_max(&reg1_mat[nq * i], kl1, nq, dimke, kmax, eps);
+		get_regulator_ke_max(&reg2_mat[nq * i], kl2, nq, dimke, kmax, eps);
+	}
+}
+
 unsigned long get_work_sz_rhs_param(unsigned long nke, unsigned int dimke, unsigned long nq,
 				    unsigned long dimq)
 {

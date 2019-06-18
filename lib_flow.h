@@ -198,6 +198,10 @@ void get_noisy_inverse(double *wt, const double *lkqq, const double *var, const 
 double test_noisy_inverse(unsigned long nq, unsigned long nke, double sigma2, int seed);
 
 /* PRELIMINARY COMPUTATIONS */
+void get_regulator_ke_max(double *reg, const double *ke_ct, unsigned long nke, unsigned int dimke, double kmax, double eps);
+void get_regulator_ke_sum(double *reg, const double *ke_ct, unsigned long nke, unsigned int dimke, double kmax, double eps);
+void get_reg_mat_loop_zs(double *reg1_mat, double *reg2_mat, double kmax, double eps, const double *ke_ct, unsigned long nke, unsigned int dimke,
+			 const double *q_ct, unsigned long nq, unsigned int dimq);
 unsigned long get_work_sz_rhs_param(unsigned long nke, unsigned int dimke, unsigned long nq, unsigned long dimq);
 void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, unsigned int dimke, double *q_sph, unsigned long nq, unsigned int dimq, double *pke_ct,
 		    double *pq_sph, unsigned long nqr, unsigned long nth, unsigned long nphi, double fac, double kf, unsigned int ke_flag, double *work, unsigned long work_sz);
@@ -210,7 +214,5 @@ void init_rhs_diff_param(struct rhs_diff_param *par, double *ke_ct, unsigned lon
 void get_rhs_block(double *gma, double *var_gma, const double *gma0, const double *var_gma0, unsigned long nke, struct rhs_param *par);
 void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs, const double *var_gma0_zs, const double *gma0_zsp,
 			const double *var_gma0_zsp, unsigned long nke, struct rhs_diff_param *par);
-void get_regulator_ke_max(double *reg, const double *ke_ct, unsigned long nke, unsigned int dimke, double kmax, double eps);
-void get_regulator_ke_sum(double *reg, const double *ke_ct, unsigned long nke, unsigned int dimke, double kmax, double eps);
 void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *param);
 void flow_rhs_ph(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke, void *param);
