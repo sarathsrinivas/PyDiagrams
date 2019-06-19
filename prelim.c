@@ -77,8 +77,12 @@ void get_reg_mat_loop_zs(double *reg1_mat, double *reg2_mat, double kmax, double
 	for (i = 0; i < nke; i++) {
 		get_zs_loop_mom_7d_ct(kl1, kl2, &ke_ct[dimke * i], dimke, q_ct, nq, dimq);
 
-		get_regulator_ke_max(&reg1_mat[nq * i], kl1, nq, dimke, kmax, eps);
-		get_regulator_ke_max(&reg2_mat[nq * i], kl2, nq, dimke, kmax, eps);
+		if (reg1_mat) {
+			get_regulator_ke_max(&reg1_mat[nq * i], kl1, nq, dimke, kmax, eps);
+		}
+		if (reg2_mat) {
+			get_regulator_ke_max(&reg2_mat[nq * i], kl2, nq, dimke, kmax, eps);
+		}
 	}
 }
 
