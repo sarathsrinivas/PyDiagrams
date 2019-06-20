@@ -29,8 +29,7 @@ void get_regulator_ke_max(double *reg, const double *ke_ct, unsigned long nke, u
 		dlp = sqrt(dlpx * dlpx + dlpy * dlpy + dlpz * dlpz);
 		P = sqrt(Px * Px + Py * Py + Pz * Pz);
 
-		max = (dl > dlp) ? dl : dlp;
-		max = (P > max) ? P : max;
+		max = (dlp > P) ? dlp : P;
 
 		reg[i] = fd_reg(max, kmax, eps);
 	}
