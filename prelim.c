@@ -14,11 +14,11 @@ static double get_abs_max(const double *k, unsigned int nk)
 	unsigned int i;
 	double max;
 
-	max = k[0];
+	max = fabs(k[0]);
 
 	for (i = 1; i < nk; i++) {
-		if (k[i] > max) {
-			max = k[i];
+		if (fabs(k[i]) > max) {
+			max = fabs(k[i]);
 		}
 	}
 
@@ -454,7 +454,7 @@ void test_get_abs_max(unsigned int n, int seed)
 	dsfmt_init_gen_rand(&drng, seed);
 
 	for (i = 0; i < n; i++) {
-		k[i] = dsfmt_genrand_close_open(&drng);
+		k[i] = 0.5 - dsfmt_genrand_close_open(&drng);
 		fprintf(stderr, "%+.15E\n", k[i]);
 	}
 
