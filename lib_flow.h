@@ -212,6 +212,9 @@ void init_rhs_diff_param(struct rhs_diff_param *par, double *ke_ct, unsigned lon
 			 double *pke_ct_zs, double *pke_ct_zsp, double *pq_sph, unsigned long nqr, unsigned long nth, unsigned long nphi, double fac, double kf,
 			 unsigned int ke_flag, double *work, unsigned long work_sz);
 
+/* TESTS */
+void test_get_abs_max(unsigned int n, int seed);
+
 /* RHS */
 void get_rhs_block(double *gma, double *var_gma, const double *gma0, const double *var_gma0, unsigned long nke, struct rhs_param *par);
 void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs, const double *var_gma0_zs, const double *gma0_zsp,

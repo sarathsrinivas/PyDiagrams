@@ -9,6 +9,22 @@
 #include <lib_pots/lib_pots.h>
 #include "lib_flow.h"
 
+static double get_abs_max(const double *k, unsigned int nk)
+{
+	unsigned int i;
+	double max;
+
+	max = k[0];
+
+	for (i = 1; i < nk; i++) {
+		if (k[i] > max) {
+			max = k[i];
+		}
+	}
+
+	return max;
+}
+
 void get_regulator_ke_max(double *reg, const double *ke_ct, unsigned long nke, unsigned int dimke,
 			  double kmax, double eps)
 {
@@ -18,18 +34,7 @@ void get_regulator_ke_max(double *reg, const double *ke_ct, unsigned long nke, u
 
 	for (i = 0; i < nke; i++) {
 
-		dl = ke_ct[dimke * i + 0];
-		dlpx = ke_ct[dimke * i + 1];
-		dlpy = ke_ct[dimke * i + 2];
-		dlpz = ke_ct[dimke * i + 3];
-		Px = ke_ct[dimke * i + 4];
-		Py = ke_ct[dimke * i + 5];
-		Pz = ke_ct[dimke * i + 6];
-
-		dlp = sqrt(dlpx * dlpx + dlpy * dlpy + dlpz * dlpz);
-		P = sqrt(Px * Px + Py * Py + Pz * Pz);
-
-		max = (dlp > P) ? dlp : P;
+		max = get_abs_max(&ke_ct[dimke * i], dimke);
 
 		reg[i] = fd_reg(max, kmax, eps);
 	}
@@ -434,4 +439,28 @@ void init_rhs_diff_param(struct rhs_diff_param *par, double *ke_ct, unsigned lon
 	par->nth = nth;
 	par->dimke = dimke;
 	par->dimq = dimq;
+}
+
+void test_get_abs_max(unsigned int n, int seed)
+{
+
+	unsigned int i;
+	double max, *k;
+	dsfmt_t drng;
+
+	k = malloc(n * sizeof(double));
+	assert(k);
+
+	dsfmt_init_gen_rand(&drng, seed);
+
+	for (i = 0; i < n; i++) {
+		k[i] = dsfmt_genrand_close_open(&drng);
+		fprintf(stderr, "%+.15E\n", k[i]);
+	}
+
+	max = get_abs_max(k, n);
+
+	fprintf(stderr, "MAX: %+.15E\n\n", max);
+
+	free(k);
 }
