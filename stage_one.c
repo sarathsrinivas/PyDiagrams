@@ -133,7 +133,7 @@ void get_fq_samples_reg(double *fq_reg, double *var_fq, const double *wt_gma, co
 
 	if (var_gma12 && var_fq) {
 
-		N = 2 * nq * nq;
+		N = 4 * nq * nq;
 
 		dsbmv_(&UPLO, &N, &K, &ALPHA, reg1x2, &LDA, var_gma12, &INCX, &BETA, var_gma12_reg,
 		       &INCY);
