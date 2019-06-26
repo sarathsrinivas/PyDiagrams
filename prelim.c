@@ -232,8 +232,8 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 
 	get_regulator_ke_max(reg_kl12, kl12_ct, 2 * nq, dimke, reg_max, reg_eps);
 
-	N = nq;
-	LDA = nq;
+	N = 2 * nq;
+	LDA = 2 * nq;
 	INCX = 1;
 	INCY = 1;
 	ALPHA = 1.0;
