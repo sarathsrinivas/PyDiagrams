@@ -7,6 +7,7 @@
 #include <lib_rng/lib_rng.h>
 #include <lib_gpr/lib_gpr.h>
 #include <lib_pots/lib_pots.h>
+#include <atlas/blas.h>
 #include "lib_flow.h"
 
 static double get_abs_max(const double *k, unsigned int nk)
@@ -117,18 +118,24 @@ unsigned long get_work_sz_rhs_param(unsigned long nke, unsigned int dimke, unsig
 	sz_alloc += nq;		 /* var_fq */
 	sz_alloc += 4 * nq * nq; /* var_gma12*/
 
+	sz_alloc += nq * nke;    /* reg12 */
+	sz_alloc += 4 * nq * nq; /* reg1x2 */
+
 	return sz_alloc;
 }
 
 void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, unsigned int dimke,
 		    double *q_sph, unsigned long nq, unsigned int dimq, double *pke_ct,
 		    double *pq_sph, unsigned long nqr, unsigned long nth, unsigned long nphi,
-		    double fac, double kf, unsigned int ke_flag, double *work,
-		    unsigned long work_sz)
+		    double fac, double kf, unsigned int ke_flag, double reg_max, double reg_eps,
+		    double *work, unsigned long work_sz)
 {
 	double *q_ct, *kxx_gma, *kxx_fq, *A1, *A2, *B1, *B2, *C, *Iqe, *IIe, *kl12_ct, *kl12_ct_p,
-	    *ktx12, *ktt12, *fqe, *var_fq, *var_gma12;
+	    *ktx12, *ktt12, *fqe, *var_fq, *var_gma12, *reg12, *reg1x2, *reg1, *reg2, *reg_kl12,
+	    ALPHA, BETA;
 	unsigned long sz_alloc, work_sz_chk, npke, npq;
+	int N, LDA, K, INCX, INCY;
+	unsigned char UPLO;
 
 	work_sz_chk = get_work_sz_rhs_param(nke, dimke, nq, dimq);
 
@@ -175,6 +182,20 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	var_gma12 = &work[sz_alloc];
 	sz_alloc += 4 * nq * nq;
 
+	reg12 = &work[sz_alloc];
+	sz_alloc += nke * nq;
+	reg1x2 = &work[sz_alloc];
+	sz_alloc += 4 * nq * nq;
+
+	assert(sz_alloc == work_sz_chk);
+
+	reg1 = malloc(nq * nke * sizeof(double));
+	assert(reg1);
+	reg2 = malloc(nq * nke * sizeof(double));
+	assert(reg2);
+	reg_kl12 = malloc(2 * nq * sizeof(double));
+	assert(reg_kl12);
+
 	npke = dimke + 1;
 	npq = dimq + 1;
 
@@ -195,6 +216,29 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 			      nq, dimq);
 	get_krn_se_ard(ktx12, kl12_ct, ke_ct, 2 * nq, nke, dimke, pke_ct, npke);
 	get_krn_se_ard(ktt12, kl12_ct, kl12_ct, 2 * nq, 2 * nq, dimke, pke_ct, npke);
+
+	get_reg_mat_loop_zs(reg1, reg2, reg_max, reg_eps, ke_ct, nke, dimke, q_ct, nq, dimq);
+
+	N = nq * nke;
+	K = 0;
+	LDA = 1;
+	INCX = 1;
+	INCY = 1;
+	UPLO = 'L';
+	ALPHA = 1.0;
+	BETA = 0.0;
+
+	dsbmv_(&UPLO, &N, &K, &ALPHA, reg1, &LDA, reg2, &INCX, &BETA, reg12, &INCY);
+
+	get_regulator_ke_max(reg_kl12, kl12_ct, 2 * nq, dimke, reg_max, reg_eps);
+
+	N = nq;
+	LDA = nq;
+	INCX = 1;
+	INCY = 1;
+	ALPHA = 1.0;
+
+	dger_(&N, &N, &ALPHA, reg_kl12, &INCX, reg_kl12, &INCY, reg1x2, &LDA);
 
 	par->ke_ct = ke_ct;
 	par->q_sph = q_sph;
@@ -223,6 +267,9 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	par->var_fq = var_fq;
 	par->var_gma12 = var_gma12;
 
+	par->reg12 = reg12;
+	par->reg1x2 = reg1x2;
+
 	par->kf = kf;
 	par->ke_flag = ke_flag;
 	par->fac = fac;
@@ -230,6 +277,10 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	par->nth = nth;
 	par->dimke = dimke;
 	par->dimq = dimq;
+
+	free(reg1);
+	free(reg2);
+	free(reg_kl12);
 }
 
 unsigned long get_work_sz_rhs_diff_param(unsigned long nke, unsigned int dimke, unsigned long nq,

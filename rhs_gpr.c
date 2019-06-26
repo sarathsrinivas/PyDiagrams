@@ -13,7 +13,7 @@ void get_rhs_block(double *gma, double *var_gma, const double *gma0, const doubl
 {
 	double *lknxx_gma, *kxx_gma, *wt_gma, *var_gma12, *ke_ct, *q_ct, *pke_ct, *wt_fq, *var_fq,
 	    *A1, *B1, *C, *A2, *B2, *lknxx_fq, *kxx_fq, *Iqe, *q_sph, *pq_sph, fac, kf, *IIe, *fqe,
-	    *ktt12, *ktx12, *kl12_ct;
+	    *ktt12, *ktx12, *kl12_ct, *reg12, *reg1x2;
 	unsigned long nq, nth, i;
 	unsigned int dimq, dimke, ke_flag;
 
@@ -53,6 +53,9 @@ void get_rhs_block(double *gma, double *var_gma, const double *gma0, const doubl
 	var_fq = par->var_fq;
 	var_gma12 = par->var_gma12;
 
+	reg12 = par->reg12;
+	reg1x2 = par->reg1x2;
+
 	lknxx_fq = malloc(nq * nq * sizeof(double));
 	assert(lknxx_fq);
 	lknxx_gma = malloc(nke * nke * sizeof(double));
@@ -69,7 +72,8 @@ void get_rhs_block(double *gma, double *var_gma, const double *gma0, const doubl
 
 	get_var_mat_chd(var_gma12, ktt12, ktx12, lknxx_gma, 2 * nq, nke);
 
-	get_fq_samples(fqe, var_fq, wt_gma, A1, B1, A2, B2, C, var_gma12, ke_flag, nq, nke);
+	get_fq_samples_reg(fqe, var_fq, wt_gma, A1, B1, A2, B2, C, var_gma12, reg12, reg1x2,
+			   ke_flag, nq, nke);
 
 	get_noise_covar_chd(lknxx_fq, kxx_fq, var_fq, nq);
 
