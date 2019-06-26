@@ -127,9 +127,13 @@ void get_fq_samples_reg(double *fq_reg, double *var_fq, const double *wt_gma, co
 	interpolate_gma(gma1, wt_gma, A1, B1, C, nq, nke);
 	interpolate_gma(gma2, wt_gma, A2, B2, C, nq, nke);
 
-	dsbmv_(&UPLO, &N, &K, &ALPHA, gma1, &LDA, gma2, &INCX, &BETA, fq, &INCY);
+	dsbmv_(&UPLO, &N, &K, &ALPHA, gma1, &LDA, gma2, &INCX, &BETA, fq_reg, &INCY);
+
+	/*
 
 	dsbmv_(&UPLO, &N, &K, &ALPHA, fq, &LDA, reg12, &INCX, &BETA, fq_reg, &INCY);
+
+	 */
 
 	if (var_gma12 && var_fq) {
 
