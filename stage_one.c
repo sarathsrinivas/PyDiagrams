@@ -99,7 +99,7 @@ void get_fq_samples_reg(double *fq_reg, double *var_fq, const double *wt_gma, co
 			unsigned int ke_flag, unsigned long nq, unsigned long nke)
 
 {
-	double *gma1, *gma2, *fq, *var_gma12_reg;
+	double *gma1, *gma2, *gma1_reg, *gma2_reg, *fq, *var_gma12_reg;
 	int N, K, LDA, INCX, INCY;
 	unsigned char UPLO;
 	double ALPHA, BETA;
@@ -108,6 +108,11 @@ void get_fq_samples_reg(double *fq_reg, double *var_fq, const double *wt_gma, co
 	assert(gma1);
 	gma2 = malloc(nq * nke * sizeof(double));
 	assert(gma2);
+
+	gma1_reg = malloc(nq * sizeof(double));
+	assert(gma1_reg);
+	gma2_reg = malloc(nq * sizeof(double));
+	assert(gma2_reg);
 
 	fq = malloc(nq * nke * sizeof(double));
 	assert(fq);
@@ -127,13 +132,9 @@ void get_fq_samples_reg(double *fq_reg, double *var_fq, const double *wt_gma, co
 	interpolate_gma(gma1, wt_gma, A1, B1, C, nq, nke);
 	interpolate_gma(gma2, wt_gma, A2, B2, C, nq, nke);
 
-	dsbmv_(&UPLO, &N, &K, &ALPHA, gma1, &LDA, gma2, &INCX, &BETA, fq_reg, &INCY);
-
-	/*
+	dsbmv_(&UPLO, &N, &K, &ALPHA, gma1, &LDA, gma2, &INCX, &BETA, fq, &INCY);
 
 	dsbmv_(&UPLO, &N, &K, &ALPHA, fq, &LDA, reg12, &INCX, &BETA, fq_reg, &INCY);
-
-	 */
 
 	if (var_gma12 && var_fq) {
 
@@ -142,13 +143,23 @@ void get_fq_samples_reg(double *fq_reg, double *var_fq, const double *wt_gma, co
 		dsbmv_(&UPLO, &N, &K, &ALPHA, reg1x2, &LDA, var_gma12, &INCX, &BETA, var_gma12_reg,
 		       &INCY);
 
-		get_var_fq(var_fq, &gma1[ke_flag * nq], &gma2[ke_flag * nq], var_gma12_reg, nq);
+		N = nq;
+
+		dsbmv_(&UPLO, &N, &K, &ALPHA, &reg12[ke_flag * nq], &LDA, &gma1[ke_flag * nq],
+		       &INCX, &BETA, gma1_reg, &INCY);
+
+		dsbmv_(&UPLO, &N, &K, &ALPHA, &reg12[ke_flag * nq], &LDA, &gma2[ke_flag * nq],
+		       &INCX, &BETA, gma2_reg, &INCY);
+
+		get_var_fq(var_fq, gma1_reg, gma2_reg, var_gma12_reg, nq);
 
 		dcopy_(&N, var_gma12_reg, &INCX, var_gma12, &INCY);
 	}
 
 	free(gma2);
 	free(gma1);
+	free(gma2_reg);
+	free(gma1_reg);
 	free(fq);
 	free(var_gma12_reg);
 }
