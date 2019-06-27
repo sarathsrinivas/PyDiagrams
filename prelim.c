@@ -127,8 +127,9 @@ unsigned long get_work_sz_rhs_param(unsigned long nke, unsigned int dimke, unsig
 void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, unsigned int dimke,
 		    double *q_sph, unsigned long nq, unsigned int dimq, double *pke_ct,
 		    double *pq_sph, unsigned long nqr, unsigned long nth, unsigned long nphi,
-		    double fac, double kf, unsigned int ke_flag, double reg_max, double reg_eps,
-		    double *work, unsigned long work_sz)
+		    double fac, double kf, unsigned int ke_flag, double reg_mn_max,
+		    double reg_mn_eps, double reg_var_max, double reg_var_eps, double *work,
+		    unsigned long work_sz)
 {
 	double *q_ct, *kxx_gma, *kxx_fq, *A1, *A2, *B1, *B2, *C, *Iqe, *IIe, *kl12_ct, *kl12_ct_p,
 	    *ktx12, *ktt12, *fqe, *var_fq, *var_gma12, *reg12, *reg1x2, *reg1, *reg2, *reg_kl12,
@@ -217,7 +218,7 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	get_krn_se_ard(ktx12, kl12_ct, ke_ct, 2 * nq, nke, dimke, pke_ct, npke);
 	get_krn_se_ard(ktt12, kl12_ct, kl12_ct, 2 * nq, 2 * nq, dimke, pke_ct, npke);
 
-	get_reg_mat_loop_zs(reg1, reg2, reg_max, reg_eps, ke_ct, nke, dimke, q_ct, nq, dimq);
+	get_reg_mat_loop_zs(reg1, reg2, reg_mn_max, reg_mn_eps, ke_ct, nke, dimke, q_ct, nq, dimq);
 
 	N = nq * nke;
 	K = 0;
@@ -230,7 +231,7 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 
 	dsbmv_(&UPLO, &N, &K, &ALPHA, reg1, &LDA, reg2, &INCX, &BETA, reg12, &INCY);
 
-	get_regulator_ke_max(reg_kl12, kl12_ct, 2 * nq, dimke, reg_max, reg_eps);
+	get_regulator_ke_max(reg_kl12, kl12_ct, 2 * nq, dimke, reg_var_max, reg_var_eps);
 
 	N = 2 * nq;
 	LDA = 2 * nq;
