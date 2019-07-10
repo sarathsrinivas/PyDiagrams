@@ -123,6 +123,10 @@ void get_zs_num(double *zs, double *ke_ct, unsigned long nke, unsigned int dimke
 void get_rhs_num(double *rhs, double *ke_ct, unsigned long nke, unsigned int dimke, double kf,
 		 unsigned long nq, unsigned long nth, unsigned long nphi,
 		 double (*vfun)(double *, unsigned int, double *), double *param);
+void get_rhs_fq_num(double *fq, const double *ke_ct, unsigned int dimke, const double *q_ct,
+		    unsigned long nq, unsigned int dimq, double kf, unsigned long nqr,
+		    unsigned long nth, unsigned long nphi,
+		    double (*vfun)(double *, unsigned int, double *), double *param);
 
 /* TESTS */
 double test_get_zs_num(unsigned long nke, unsigned long nq, unsigned long nth, unsigned long nphi,

@@ -103,6 +103,39 @@ void get_rhs_num(double *rhs, double *ke_ct, unsigned long nke, unsigned int dim
 	free(kep_ct);
 }
 
+void get_rhs_fq_num(double *fq, const double *ke_ct, unsigned int dimke, const double *q_ct,
+		    unsigned long nq, unsigned int dimq, double kf, unsigned long nqr,
+		    unsigned long nth, unsigned long nphi,
+		    double (*vfun)(double *, unsigned int, double *), double *param)
+{
+	double *kl1_ct, *kl2_ct, *gma1, *gma2;
+	unsigned long i;
+
+	kl1_ct = malloc(nq * dimke * sizeof(double));
+	assert(kl1_ct);
+	kl2_ct = malloc(nq * dimke * sizeof(double));
+	assert(kl2_ct);
+
+	gma1 = malloc(nq * sizeof(double));
+	assert(gma1);
+	gma2 = malloc(nq * sizeof(double));
+	assert(gma2);
+
+	get_zs_loop_mom_7d_ct(kl1_ct, kl2_ct, ke_ct, dimke, q_ct, nq, dimq);
+
+	get_rhs_num(gma1, kl1_ct, nq, dimke, kf, nqr, nth, nphi, vfun, param);
+	get_rhs_num(gma2, kl2_ct, nq, dimke, kf, nqr, nth, nphi, vfun, param);
+
+	for (i = 0; i < nq; i++) {
+		fq[i] = gma1[i] * gma2[i];
+	}
+
+	free(kl1_ct);
+	free(kl2_ct);
+	free(gma1);
+	free(gma2);
+}
+
 /* TESTS */
 
 double test_get_zs_num(unsigned long nke, unsigned long nq, unsigned long nth, unsigned long nphi,
