@@ -256,6 +256,7 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 		    double fac, double kf, unsigned int ke_flag, double reg_mn_max,
 		    double reg_mn_eps, double reg_var_max, double reg_var_eps, double *work,
 		    unsigned long work_sz);
+void free_rhs_param(struct rhs_param *par);
 unsigned long get_work_sz_rhs_diff_param(unsigned long nke, unsigned int dimke, unsigned long nq,
 					 unsigned int dimq);
 void init_rhs_diff_param(struct rhs_diff_param *par, double *ke_ct, unsigned long nke,
