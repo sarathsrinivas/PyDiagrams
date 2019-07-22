@@ -295,45 +295,6 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	free(reg_kl12);
 }
 
-void free_rhs_param(struct rhs_param *par)
-
-{
-	assert(par);
-
-	free(par->ke_ct);
-	free(par->q_sph);
-	free(par->q_ct);
-
-	free(par->pke_ct);
-	free(par->pq_sph);
-
-	free(par->kxx_gma);
-	free(par->kxx_fq);
-
-	free(par->A1);
-	free(par->A2);
-	free(par->B1);
-	free(par->B2);
-	free(par->C);
-
-	free(par->Iqe);
-	free(par->IIe);
-
-	free(par->ktt12);
-	free(par->ktx12);
-	free(par->kl12_ct);
-
-	free(par->fqe);
-	free(par->var_fq);
-	free(par->var_gma12);
-
-	free(par->reg12);
-	free(par->reg1x2);
-
-	free(par->var_gma_in);
-	free(par->var_gma_out);
-}
-
 unsigned long get_work_sz_rhs_diff_param(unsigned long nke, unsigned int dimke, unsigned long nq,
 					 unsigned int dimq)
 
