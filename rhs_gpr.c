@@ -112,8 +112,6 @@ void get_rhs_ph(double *gma, const double *gma0, unsigned long nke, void *param)
 
 	for (i = 0; i < nke; i++) {
 		gma[i] = gma_zs[i] - gma_zsp[i];
-		par_zs.var_gma_in[i] = par_zs.var_gma_out[i] + par_zsp.var_gma_out[i];
-		par_zsp.var_gma_in[i] = par_zs.var_gma_out[i] + par_zsp.var_gma_out[i];
 	}
 
 	free(gma_zs);
