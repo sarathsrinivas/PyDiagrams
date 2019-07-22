@@ -1,7 +1,8 @@
 /* DATA STRUCTURES */
 struct rhs_param {
 	double *ke_ct, *q_ct, *q_sph, *pke_ct, *pq_sph, *kxx_gma, *kxx_fq, *ktt12, *ktx12, *kl12_ct,
-	    *A1, *B1, *A2, *B2, *C, *Iqe, *IIe, *fqe, *var_fq, *var_gma12, *reg12, *reg1x2;
+	    *A1, *B1, *A2, *B2, *C, *Iqe, *IIe, *fqe, *var_fq, *var_gma12, *reg12, *reg1x2,
+	    *var_gma_out, *var_gma_in;
 	double fac, kf;
 	unsigned int dimke, dimq, ke_flag;
 	unsigned long nq, nth;
@@ -267,8 +268,7 @@ void init_rhs_diff_param(struct rhs_diff_param *par, double *ke_ct, unsigned lon
 void test_get_abs_max(unsigned int n, int seed);
 
 /* RHS */
-void get_rhs_block(double *gma, double *var_gma, const double *gma0, const double *var_gma0,
-		   unsigned long nke, struct rhs_param *par);
+void get_rhs_block(double *gma, const double *gma0, unsigned long nke, void *par);
 void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs,
 			const double *var_gma0_zs, const double *gma0_zsp,
 			const double *var_gma0_zsp, unsigned long nke, struct rhs_diff_param *par);

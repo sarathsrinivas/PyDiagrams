@@ -121,6 +121,9 @@ unsigned long get_work_sz_rhs_param(unsigned long nke, unsigned int dimke, unsig
 	sz_alloc += nq * nke;    /* reg12 */
 	sz_alloc += 4 * nq * nq; /* reg1x2 */
 
+	sz_alloc += nke; /* var_gma_in */
+	sz_alloc += nke; /* var_gma_out */
+
 	return sz_alloc;
 }
 
@@ -133,7 +136,7 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 {
 	double *q_ct, *kxx_gma, *kxx_fq, *A1, *A2, *B1, *B2, *C, *Iqe, *IIe, *kl12_ct, *kl12_ct_p,
 	    *ktx12, *ktt12, *fqe, *var_fq, *var_gma12, *reg12, *reg1x2, *reg1, *reg2, *reg_kl12,
-	    ALPHA, BETA;
+	    *var_gma_in, *var_gma_out, ALPHA, BETA;
 	unsigned long sz_alloc, work_sz_chk, npke, npq;
 	int N, LDA, K, INCX, INCY;
 	unsigned char UPLO;
@@ -187,6 +190,11 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	sz_alloc += nke * nq;
 	reg1x2 = &work[sz_alloc];
 	sz_alloc += 4 * nq * nq;
+
+	var_gma_in = &work[sz_alloc];
+	sz_alloc += nke;
+	var_gma_out = &work[sz_alloc];
+	sz_alloc += nke;
 
 	assert(sz_alloc == work_sz_chk);
 
@@ -271,6 +279,9 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	par->reg12 = reg12;
 	par->reg1x2 = reg1x2;
 
+	par->var_gma_in = var_gma_in;
+	par->var_gma_out = var_gma_out;
+
 	par->kf = kf;
 	par->ke_flag = ke_flag;
 	par->fac = fac;
@@ -282,6 +293,45 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	free(reg1);
 	free(reg2);
 	free(reg_kl12);
+}
+
+void free_rhs_param(struct rhs_param *par)
+
+{
+	assert(par);
+
+	free(par->ke_ct);
+	free(par->q_sph);
+	free(par->q_ct);
+
+	free(par->pke_ct);
+	free(par->pq_sph);
+
+	free(par->kxx_gma);
+	free(par->kxx_fq);
+
+	free(par->A1);
+	free(par->A2);
+	free(par->B1);
+	free(par->B2);
+	free(par->C);
+
+	free(par->Iqe);
+	free(par->IIe);
+
+	free(par->ktt12);
+	free(par->ktx12);
+	free(par->kl12_ct);
+
+	free(par->fqe);
+	free(par->var_fq);
+	free(par->var_gma12);
+
+	free(par->reg12);
+	free(par->reg1x2);
+
+	free(par->var_gma_in);
+	free(par->var_gma_out);
 }
 
 unsigned long get_work_sz_rhs_diff_param(unsigned long nke, unsigned int dimke, unsigned long nq,

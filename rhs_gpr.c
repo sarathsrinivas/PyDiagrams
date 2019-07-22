@@ -8,14 +8,14 @@
 #include <atlas/blas.h>
 #include "lib_flow.h"
 
-void get_rhs_block(double *gma, double *var_gma, const double *gma0, const double *var_gma0,
-		   unsigned long nke, struct rhs_param *par)
+void get_rhs_block(double *gma, const double *gma0, unsigned long nke, void *param)
 {
 	double *lknxx_gma, *kxx_gma, *wt_gma, *var_gma12, *ke_ct, *q_ct, *pke_ct, *wt_fq, *var_fq,
 	    *A1, *B1, *C, *A2, *B2, *lknxx_fq, *kxx_fq, *Iqe, *q_sph, *pq_sph, fac, kf, *IIe, *fqe,
-	    *ktt12, *ktx12, *kl12_ct, *reg12, *reg1x2;
+	    *ktt12, *ktx12, *kl12_ct, *reg12, *reg1x2, *var_gma0, *var_gma;
 	unsigned long nq, nth, i;
 	unsigned int dimq, dimke, ke_flag;
+	struct rhs_param *par = param;
 
 	ke_ct = par->ke_ct;
 	q_ct = par->q_ct;
@@ -55,6 +55,9 @@ void get_rhs_block(double *gma, double *var_gma, const double *gma0, const doubl
 
 	reg12 = par->reg12;
 	reg1x2 = par->reg1x2;
+
+	var_gma0 = par->var_gma_in;
+	var_gma = par->var_gma_out;
 
 	lknxx_fq = malloc(nq * nq * sizeof(double));
 	assert(lknxx_fq);
