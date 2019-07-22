@@ -270,6 +270,7 @@ void test_get_abs_max(unsigned int n, int seed);
 
 /* RHS */
 void get_rhs_block(double *gma, const double *gma0, unsigned long nke, void *par);
+void get_rhs_ph(double *gma, const double *gma0, unsigned long nke, void *param);
 void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs,
 			const double *var_gma0_zs, const double *gma0_zsp,
 			const double *var_gma0_zsp, unsigned long nke, struct rhs_diff_param *par);

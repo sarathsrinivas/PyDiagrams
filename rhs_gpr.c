@@ -92,6 +92,34 @@ void get_rhs_block(double *gma, const double *gma0, unsigned long nke, void *par
 	free(lknxx_gma);
 }
 
+void get_rhs_ph(double *gma, const double *gma0, unsigned long nke, void *param)
+{
+	double *gma_zs, *gma_zsp;
+	unsigned long i;
+	struct rhs_param par_zs, par_zsp;
+	struct rhs_param *par = param;
+
+	gma_zs = malloc(nke * sizeof(double));
+	assert(gma_zs);
+	gma_zsp = malloc(nke * sizeof(double));
+	assert(gma_zsp);
+
+	par_zs = par[0];
+	par_zsp = par[1];
+
+	get_rhs_block(gma_zs, gma0, nke, &par_zs);
+	get_rhs_block(gma_zsp, gma0, nke, &par_zsp);
+
+	for (i = 0; i < nke; i++) {
+		gma[i] = gma_zs[i] - gma_zsp[i];
+		par_zs.var_gma_in[i] = par_zs.var_gma_out[i] + par_zsp.var_gma_out[i];
+		par_zsp.var_gma_in[i] = par_zs.var_gma_out[i] + par_zsp.var_gma_out[i];
+	}
+
+	free(gma_zs);
+	free(gma_zsp);
+}
+
 void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs,
 			const double *var_gma0_zs, const double *gma0_zsp,
 			const double *var_gma0_zsp, unsigned long nke, struct rhs_diff_param *par)
@@ -205,6 +233,7 @@ void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs,
 	free(lknxx_fq);
 	free(lknxx_gma);
 }
+
 void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke,
 	      void *param)
 {
