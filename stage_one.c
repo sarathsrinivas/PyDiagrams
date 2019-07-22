@@ -53,6 +53,9 @@ void interpolate_gma(double *gma, const double *wt_gma, const double *Aeq, const
 	LDA = 1;
 
 	dsbmv_(&UPLO, &N, &K, &ALPHA, Aeq, &LDA, wbc, &INCX, &BETA, gma, &INCY);
+
+	free(wtb);
+	free(wbc);
 }
 
 void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const double *A1,

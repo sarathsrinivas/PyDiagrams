@@ -157,8 +157,8 @@ void get_gma_weight(double *wt_gma, const double *lknxx_gma, const double *gma, 
 	assert(INFO == 0);
 }
 
-void get_noisy_inverse(double *wt, const double *lkqq, const double *var, const double *y, unsigned long nq,
-		       unsigned long nke)
+void get_noisy_inverse(double *wt, const double *lkqq, const double *var, const double *y,
+		       unsigned long nq, unsigned long nke)
 {
 
 	double *wt0, ALPHA, BETA;
@@ -199,7 +199,8 @@ void get_noisy_inverse(double *wt, const double *lkqq, const double *var, const 
 	BETA = 0.0;
 
 	for (i = 0; i < nke; i++) {
-		dsbmv_(&UPLO, &N, &K, &ALPHA, var, &LDA, &wt0[i * nq], &INCX, &BETA, &wt[i * nq], &INCY);
+		dsbmv_(&UPLO, &N, &K, &ALPHA, var, &LDA, &wt0[i * nq], &INCX, &BETA, &wt[i * nq],
+		       &INCY);
 	}
 
 	/* -1.0 * K^-1 DIAG(V_F) WT^0 */
