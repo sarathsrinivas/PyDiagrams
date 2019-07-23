@@ -90,7 +90,7 @@ void get_rhs_block(double *gma, double *var_gma, const double *gma0, const doubl
 	free(lknxx_gma);
 }
 
-void get_rhs_ph(double *gma_2, const double *gma0_2, unsigned long n2ke, void *param)
+void get_rhs_ph(double *gma_2, double s, double *gma0_2, unsigned long n2ke, void *param)
 {
 	double *gma_zs, *gma_zsp, *var_gma_zs, *var_gma_zsp;
 	unsigned long i, nke;

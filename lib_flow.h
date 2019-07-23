@@ -108,6 +108,7 @@ void print_mom(const double *k, unsigned long nk, unsigned int dimk, FILE *out);
 double test_zs_zsp_rot(unsigned long nke, int seed);
 
 /* FLOW FUNS */
+double get_diag_energy_7d_ct(const double *ke_ct, unsigned int dim);
 double get_zs_energy_7d_ct(const double *ke_ct, unsigned int dim);
 void get_zs_loop_mom_7d_ct(double *kl1_ct, double *kl2_ct, const double *ke_ct, unsigned int dimke,
 			   const double *q_ct, unsigned long nq, unsigned int dimq);
@@ -270,7 +271,7 @@ void test_get_abs_max(unsigned int n, int seed);
 /* RHS */
 void get_rhs_block(double *gma, double *var_gma, const double *gma0, const double *var_gma0,
 		   unsigned long nke, void *param);
-void get_rhs_ph(double *gma, const double *gma0, unsigned long nke, void *param);
+void get_rhs_ph(double *gma_2, double s, double *gma0_2, unsigned long n2ke, void *param);
 void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs,
 			const double *var_gma0_zs, const double *gma0_zsp,
 			const double *var_gma0_zsp, unsigned long nke, struct rhs_diff_param *par);

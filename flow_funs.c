@@ -9,10 +9,42 @@
 #define DIM (7)
 #define PREFAC (1 / (8 * PI * PI * PI))
 
+double get_diag_energy_7d_ct(const double *ke_ct, unsigned int dim)
+{
+	double dlz, dlpx, dlpy, dlpz, Px, Py, Pz, dl_dlp, P_dl, P_dlp, P2, dlp2, dl2, cos_dl_dlp,
+	    cos_P_dl, cos_P_dlp, sin_dl_dlp, sin_P_dl, sin_P_dlp, Podl, Podlp, dlodlp, f[4], e_diag;
+
+	dlz = ke_ct[0];
+	dlpx = ke_ct[1];
+	dlpy = ke_ct[2];
+	dlpz = ke_ct[3];
+	Px = ke_ct[4];
+	Py = ke_ct[5];
+	Pz = ke_ct[6];
+
+	P2 = Px * Px + Py * Py + Pz * Pz;
+	dlp2 = dlpx * dlpx + dlpy * dlpy + dlpz * dlpz;
+	dl2 = dlz * dlz;
+
+	Podl = Pz * dlz;
+	Podlp = Px * dlpx + Py * dlpy + Pz * dlpz;
+	dlodlp = dlpz * dlz;
+
+	f[0] = P2 + dl2 + dlp2 + 2 * (Podl + Podlp + dlodlp);
+	f[1] = P2 + dl2 + dlp2 + 2 * (-Podl - Podlp + dlodlp);
+	f[2] = P2 + dl2 + dlp2 + 2 * (-Podl + Podlp - dlodlp);
+	f[3] = P2 + dl2 + dlp2 + 2 * (Podl - Podlp - dlodlp);
+
+	e_diag = 0.5 * (f[0] + f[1] - f[2] - f[3]);
+	e_diag = -1.0 * e_diag * e_diag;
+
+	return e_diag;
+}
+
 double get_zs_energy_7d_ct(const double *ke_ct, unsigned int dim)
 {
-	double dlz, dlpx, dlpy, dlpz, Px, Py, Pz, dl_dlp, P_dl, P_dlp, P2, dlp2, dl2, cos_dl_dlp, cos_P_dl,
-	    cos_P_dlp, sin_dl_dlp, sin_P_dl, sin_P_dlp, Podl, Podlp, dlodlp, f[4], e_ext;
+	double dlz, dlpx, dlpy, dlpz, Px, Py, Pz, dl_dlp, P_dl, P_dlp, P2, dlp2, dl2, cos_dl_dlp,
+	    cos_P_dl, cos_P_dlp, sin_dl_dlp, sin_P_dl, sin_P_dlp, Podl, Podlp, dlodlp, f[4], e_ext;
 
 	dlz = ke_ct[0];
 	dlpx = ke_ct[1];
@@ -88,12 +120,12 @@ void get_zs_loop_mom_7d_ct(double *kl1_ct, double *kl2_ct, const double *ke_ct, 
 	}
 }
 
-void get_zs_num_7d_ct(double *zs_ct, double *ke_ct, unsigned long nke, unsigned int dimke, double kf,
-		      unsigned long nq, unsigned long nth, unsigned long nphi,
+void get_zs_num_7d_ct(double *zs_ct, double *ke_ct, unsigned long nke, unsigned int dimke,
+		      double kf, unsigned long nq, unsigned long nth, unsigned long nphi,
 		      double (*vfun)(double *, unsigned int, double *), double *param)
 {
-	double *xq, *wxq, ph_vol, q, th, phi, e_ext, *kl1_ct, *kl2_ct, v1, v2, tmp, eq, P, P_dl, dlp, dl_dlp,
-	    dl, P_dlp, phi_dlp, *q_ct;
+	double *xq, *wxq, ph_vol, q, th, phi, e_ext, *kl1_ct, *kl2_ct, v1, v2, tmp, eq, P, P_dl,
+	    dlp, dl_dlp, dl, P_dlp, phi_dlp, *q_ct;
 	unsigned long nxq, i, n;
 	unsigned int dimq;
 
