@@ -121,9 +121,6 @@ unsigned long get_work_sz_rhs_param(unsigned long nke, unsigned int dimke, unsig
 	sz_alloc += nq * nke;    /* reg12 */
 	sz_alloc += 4 * nq * nq; /* reg1x2 */
 
-	sz_alloc += nke; /* var_gma_in */
-	sz_alloc += nke; /* var_gma_out */
-
 	return sz_alloc;
 }
 
@@ -190,11 +187,6 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	sz_alloc += nke * nq;
 	reg1x2 = &work[sz_alloc];
 	sz_alloc += 4 * nq * nq;
-
-	var_gma_in = &work[sz_alloc];
-	sz_alloc += nke;
-	var_gma_out = &work[sz_alloc];
-	sz_alloc += nke;
 
 	assert(sz_alloc == work_sz_chk);
 
@@ -278,9 +270,6 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 
 	par->reg12 = reg12;
 	par->reg1x2 = reg1x2;
-
-	par->var_gma_in = var_gma_in;
-	par->var_gma_out = var_gma_out;
 
 	par->kf = kf;
 	par->ke_flag = ke_flag;

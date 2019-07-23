@@ -8,11 +8,12 @@
 #include <atlas/blas.h>
 #include "lib_flow.h"
 
-void get_rhs_block(double *gma, const double *gma0, unsigned long nke, void *param)
+void get_rhs_block(double *gma, double *var_gma, const double *gma0, const double *var_gma0,
+		   unsigned long nke, void *param)
 {
 	double *lknxx_gma, *kxx_gma, *wt_gma, *var_gma12, *ke_ct, *q_ct, *pke_ct, *wt_fq, *var_fq,
 	    *A1, *B1, *C, *A2, *B2, *lknxx_fq, *kxx_fq, *Iqe, *q_sph, *pq_sph, fac, kf, *IIe, *fqe,
-	    *ktt12, *ktx12, *kl12_ct, *reg12, *reg1x2, *var_gma0, *var_gma;
+	    *ktt12, *ktx12, *kl12_ct, *reg12, *reg1x2;
 	unsigned long nq, nth, i;
 	unsigned int dimq, dimke, ke_flag;
 	struct rhs_param *par = param;
@@ -56,9 +57,6 @@ void get_rhs_block(double *gma, const double *gma0, unsigned long nke, void *par
 	reg12 = par->reg12;
 	reg1x2 = par->reg1x2;
 
-	var_gma0 = par->var_gma_in;
-	var_gma = par->var_gma_out;
-
 	lknxx_fq = malloc(nq * nq * sizeof(double));
 	assert(lknxx_fq);
 	lknxx_gma = malloc(nke * nke * sizeof(double));
@@ -92,30 +90,40 @@ void get_rhs_block(double *gma, const double *gma0, unsigned long nke, void *par
 	free(lknxx_gma);
 }
 
-void get_rhs_ph(double *gma, const double *gma0, unsigned long nke, void *param)
+void get_rhs_ph(double *gma_2, const double *gma0_2, unsigned long n2ke, void *param)
 {
-	double *gma_zs, *gma_zsp;
-	unsigned long i;
+	double *gma_zs, *gma_zsp, *var_gma_zs, *var_gma_zsp;
+	unsigned long i, nke;
 	struct rhs_param par_zs, par_zsp;
 	struct rhs_param *par = param;
+
+	nke = n2ke / 2;
 
 	gma_zs = malloc(nke * sizeof(double));
 	assert(gma_zs);
 	gma_zsp = malloc(nke * sizeof(double));
 	assert(gma_zsp);
 
+	var_gma_zs = malloc(nke * sizeof(double));
+	assert(var_gma_zs);
+	var_gma_zsp = malloc(nke * sizeof(double));
+	assert(var_gma_zsp);
+
 	par_zs = par[0];
 	par_zsp = par[1];
 
-	get_rhs_block(gma_zs, gma0, nke, &par_zs);
-	get_rhs_block(gma_zsp, gma0, nke, &par_zsp);
+	get_rhs_block(gma_zs, var_gma_zs, gma0_2, &gma0_2[nke], nke, &par_zs);
+	get_rhs_block(gma_zsp, var_gma_zsp, gma0_2, &gma0_2[nke], nke, &par_zsp);
 
 	for (i = 0; i < nke; i++) {
-		gma[i] = gma_zs[i] - gma_zsp[i];
+		gma_2[i] = gma_zs[i] - gma_zsp[i];
+		gma_2[nke + i] = var_gma_zs[i] + var_gma_zsp[i];
 	}
 
 	free(gma_zs);
 	free(gma_zsp);
+	free(var_gma_zs);
+	free(var_gma_zsp);
 }
 
 void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs,
