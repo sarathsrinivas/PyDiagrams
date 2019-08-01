@@ -66,6 +66,7 @@ void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const doub
 {
 	double *gma1, *gma2;
 	int N, K, LDA, INCX, INCY;
+	unsigned long i;
 	unsigned char UPLO;
 	double ALPHA, BETA;
 
@@ -88,6 +89,10 @@ void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const doub
 
 	dsbmv_(&UPLO, &N, &K, &ALPHA, gma1, &LDA, gma2, &INCX, &BETA, fq, &INCY);
 
+	for (i = 0; i < nq; i++) {
+		fq[i] += var_gma12[2 * nq * (i) + (nq + i)];
+	}
+
 	if (var_gma12 && var_fq) {
 		get_var_fq(var_fq, &gma1[ke_flag * nq], &gma2[ke_flag * nq], var_gma12, nq);
 	}
@@ -104,6 +109,7 @@ void get_fq_samples_reg(double *fq_reg, double *var_fq, const double *wt_gma, co
 {
 	double *gma1, *gma2, *gma1_reg, *gma2_reg, *fq, *var_gma12_reg;
 	int N, K, LDA, INCX, INCY;
+	unsigned long i;
 	unsigned char UPLO;
 	double ALPHA, BETA;
 
@@ -136,6 +142,10 @@ void get_fq_samples_reg(double *fq_reg, double *var_fq, const double *wt_gma, co
 	interpolate_gma(gma2, wt_gma, A2, B2, C, nq, nke);
 
 	dsbmv_(&UPLO, &N, &K, &ALPHA, gma1, &LDA, gma2, &INCX, &BETA, fq, &INCY);
+
+	for (i = 0; i < nq; i++) {
+		fq[i] += var_gma12[2 * nq * (i) + (nq + i)];
+	}
 
 	dsbmv_(&UPLO, &N, &K, &ALPHA, fq, &LDA, reg12, &INCX, &BETA, fq_reg, &INCY);
 
