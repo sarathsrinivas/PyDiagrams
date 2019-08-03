@@ -9,10 +9,10 @@
 #define DIM (7)
 #define PREFAC (1 / (8 * PI * PI * PI))
 
-double get_diag_energy_7d_ct(const double *ke_ct, unsigned int dim)
+double get_energy_ext_7d_ct(const double *ke_ct, unsigned int dim)
 {
 	double dlz, dlpx, dlpy, dlpz, Px, Py, Pz, dl_dlp, P_dl, P_dlp, P2, dlp2, dl2, cos_dl_dlp,
-	    cos_P_dl, cos_P_dlp, sin_dl_dlp, sin_P_dl, sin_P_dlp, Podl, Podlp, dlodlp, f[4], e_diag;
+	    cos_P_dl, cos_P_dlp, sin_dl_dlp, sin_P_dl, sin_P_dlp, Podl, Podlp, dlodlp, f[4], e_ext;
 
 	dlz = ke_ct[0];
 	dlpx = ke_ct[1];
@@ -35,10 +35,9 @@ double get_diag_energy_7d_ct(const double *ke_ct, unsigned int dim)
 	f[2] = P2 + dl2 + dlp2 + 2 * (-Podl + Podlp - dlodlp);
 	f[3] = P2 + dl2 + dlp2 + 2 * (Podl - Podlp - dlodlp);
 
-	e_diag = 0.5 * (f[0] + f[1] - f[2] - f[3]);
-	e_diag = -1.0 * e_diag * e_diag;
+	e_ext = 0.5 * (f[0] + f[1] - f[2] - f[3]);
 
-	return e_diag;
+	return e_ext;
 }
 
 double get_zs_energy_7d_ct(const double *ke_ct, unsigned int dim)
