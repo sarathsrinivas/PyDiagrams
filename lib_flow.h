@@ -272,6 +272,7 @@ void test_get_abs_max(unsigned int n, int seed);
 void get_rhs_block(double *gma, double *var_gma, const double *gma0, const double *var_gma0,
 		   unsigned long nke, void *param);
 void get_rhs_ph(double *gma_2, double s, double *gma0_2, unsigned long n2ke, void *param);
+void get_rhs_ph_lin(double *gma_2, double s, double *gma0_2, unsigned long n2ke, void *param);
 void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs,
 			const double *var_gma0_zs, const double *gma0_zsp,
 			const double *var_gma0_zsp, unsigned long nke, struct rhs_diff_param *par);

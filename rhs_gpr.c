@@ -8,6 +8,8 @@
 #include <atlas/blas.h>
 #include "lib_flow.h"
 
+#define DIMKE (7)
+
 void get_rhs_block(double *gma, double *var_gma, const double *gma0, const double *var_gma0,
 		   unsigned long nke, void *param)
 {
@@ -118,6 +120,49 @@ void get_rhs_ph(double *gma_2, double s, double *gma0_2, unsigned long n2ke, voi
 	for (i = 0; i < nke; i++) {
 		gma_2[i] = gma_zs[i] - gma_zsp[i];
 		gma_2[nke + i] = var_gma_zs[i] + var_gma_zsp[i];
+	}
+
+	free(gma_zs);
+	free(gma_zsp);
+	free(var_gma_zs);
+	free(var_gma_zsp);
+}
+
+void get_rhs_ph_lin(double *gma_2, double s, double *gma0_2, unsigned long n2ke, void *param)
+{
+	double *gma_zs, *gma_zsp, *var_gma_zs, *var_gma_zsp, e_ext;
+	unsigned long i, nke;
+	unsigned int dimke;
+	struct rhs_param par_zs, par_zsp;
+	struct rhs_param *par = param;
+
+	nke = n2ke / 2;
+
+	gma_zs = malloc(nke * sizeof(double));
+	assert(gma_zs);
+	gma_zsp = malloc(nke * sizeof(double));
+	assert(gma_zsp);
+
+	var_gma_zs = malloc(nke * sizeof(double));
+	assert(var_gma_zs);
+	var_gma_zsp = malloc(nke * sizeof(double));
+	assert(var_gma_zsp);
+
+	par_zs = par[0];
+	par_zsp = par[1];
+
+	dimke = DIMKE;
+
+	get_rhs_block(gma_zs, var_gma_zs, gma0_2, &gma0_2[nke], nke, &par_zs);
+	get_rhs_block(gma_zsp, var_gma_zsp, gma0_2, &gma0_2[nke], nke, &par_zsp);
+
+	for (i = 0; i < nke; i++) {
+
+		e_ext = get_energy_ext_7d_ct(&(par_zs.ke_ct[i * dimke]), dimke);
+
+		gma_2[i] = -1.0 * e_ext * e_ext * gma0_2[i] + gma_zs[i] - gma_zsp[i];
+		gma_2[nke + i]
+		    = -2.0 * e_ext * e_ext * gma0_2[nke + i] + var_gma_zs[i] + var_gma_zsp[i];
 	}
 
 	free(gma_zs);
