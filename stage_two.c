@@ -157,6 +157,35 @@ void get_gma_weight(double *wt_gma, const double *lknxx_gma, const double *gma, 
 	assert(INFO == 0);
 }
 
+void get_gma_weight_mean(double *wt_gma, const double *lknxx_gma, const double *gma,
+			 const double *gma_mean, unsigned long nke)
+{
+
+	int N, LDA, LDB, NRHS, INCX, INCY, INFO;
+	double ALPHA;
+	unsigned char UPLO;
+
+	N = nke;
+	INCX = 1;
+	INCY = 1;
+	ALPHA = -1.0;
+
+	/* GMA = GMA - GMA_MEAN */
+	daxpy_(&N, &ALPHA, gma_mean, &INCX, gma, &INCY);
+
+	dcopy_(&N, gma, &INCX, wt_gma, &INCY);
+
+	UPLO = 'L';
+	N = nke;
+	NRHS = 1;
+	LDA = nke;
+	LDB = nke;
+
+	dpotrs_(&UPLO, &N, &NRHS, lknxx_gma, &LDA, wt_gma, &LDB, &INFO);
+
+	assert(INFO == 0);
+}
+
 void get_noisy_inverse(double *wt, const double *lkqq, const double *var, const double *y,
 		       unsigned long nq, unsigned long nke)
 {

@@ -1,7 +1,8 @@
 /* DATA STRUCTURES */
 struct rhs_param {
 	double *ke_ct, *q_ct, *q_sph, *pke_ct, *pq_sph, *kxx_gma, *kxx_fq, *ktt12, *ktx12, *kl12_ct,
-	    *A1, *B1, *A2, *B2, *C, *Iqe, *IIe, *fqe, *var_fq, *var_gma12, *reg12, *reg1x2;
+	    *A1, *B1, *A2, *B2, *C, *Iqe, *IIe, *fqe, *var_fq, *var_gma12, *reg12, *reg1x2,
+	    *gma_smp_mn, *gma1_lp_mn, *gma2_lp_mn, *exp_diag_lp1, *exp_diag_lp2;
 	double fac, kf;
 	unsigned int dimke, dimq, ke_flag;
 	unsigned long nq, nth;
@@ -203,6 +204,9 @@ double test_zs_gma_covar(unsigned long nke, unsigned long nq, int seed);
 /* STAGE ONE */
 void interpolate_gma(double *gma, const double *wt_gma, const double *Aeq, const double *Bes,
 		     const double *Csq, unsigned long nq, unsigned long nke);
+void interpolate_gma_mean(double *gma, const double *gma_mean, const double *wt_gma,
+			  const double *Aeq, const double *Bes, const double *Csq, unsigned long nq,
+			  unsigned long nke);
 void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const double *A1eq,
 		    const double *B1es, const double *A2eq, const double *B2es, const double *Csq,
 		    const double *var_gma12, unsigned int ke_flag, unsigned long nq,
@@ -211,6 +215,12 @@ void get_fq_samples_reg(double *fq_reg, double *var_fq, const double *wt_gma, co
 			const double *B1, const double *A2, const double *B2, const double *C,
 			double *var_gma12, const double *reg12, const double *reg1x2,
 			unsigned int ke_flag, unsigned long nq, unsigned long nke);
+void get_fq_samples_reg_mean(double *fq_reg, double *var_fq, double *gma1_mean, double *gma2_mean,
+			     const double *exp_diag1, const double *exp_diag2, const double *wt_gma,
+			     const double *A1, const double *B1, const double *A2, const double *B2,
+			     const double *C, double *var_gma12, const double *reg12,
+			     const double *reg1x2, unsigned int ke_flag, unsigned long nq,
+			     unsigned long nke);
 void get_fq_as_samples(double *fq, double *var_fq, const double *wt_gma_zs,
 		       const double *wt_gma_zsp, const double *A1, const double *A2,
 		       const double *B1, const double *B2, const double *C, const double *A1p,
@@ -234,6 +244,8 @@ void get_gma_gpr_mean(double *gma_gpr, const double *Ifq, const double *wfq, uns
 void get_gma_gpr_var(double *var_gma_gpr, const double *II, const double *Iqe, const double *lknqq,
 		     unsigned long nq, unsigned long nke);
 void get_gma_weight(double *wt_gma, const double *lknxx_gma, const double *gma, unsigned long nke);
+void get_gma_weight_mean(double *wt_gma, const double *lknxx_gma, const double *gma,
+			 const double *gma_mean, unsigned long nke);
 void get_noisy_inverse(double *wt, const double *lkqq, const double *var, const double *y,
 		       unsigned long nq, unsigned long nke);
 
@@ -271,6 +283,8 @@ void test_get_abs_max(unsigned int n, int seed);
 /* RHS */
 void get_rhs_block(double *gma, double *var_gma, const double *gma0, const double *var_gma0,
 		   unsigned long nke, void *param);
+void get_rhs_block_mean(double *gma, double *var_gma, const double *gma0, const double *var_gma0,
+			unsigned long nke, void *param);
 void get_rhs_ph(double *gma_2, double s, double *gma0_2, unsigned long n2ke, void *param);
 void get_rhs_ph_lin(double *gma_2, double s, double *gma0_2, unsigned long n2ke, void *param);
 void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs,

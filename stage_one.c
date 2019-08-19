@@ -58,6 +58,59 @@ void interpolate_gma(double *gma, const double *wt_gma, const double *Aeq, const
 	free(wbc);
 }
 
+void interpolate_gma_mean(double *gma, const double *gma_mean, const double *wt_gma,
+			  const double *Aeq, const double *Bes, const double *Csq, unsigned long nq,
+			  unsigned long nke)
+
+{
+	double *wtb, *wbc;
+	unsigned long i;
+	int N, M, K, LDA, LDB, LDC, INCX, INCY;
+	unsigned char UPLO, TA, TB;
+	double ALPHA, BETA;
+
+	wtb = malloc(nke * nke * sizeof(double));
+	assert(wtb);
+	wbc = malloc(nq * nke * sizeof(double));
+	assert(wbc);
+
+	N = nke;
+	K = 0;
+	LDA = 1;
+	INCX = 1;
+	INCY = 1;
+	UPLO = 'L';
+	ALPHA = 1.0;
+	BETA = 0.0;
+
+	for (i = 0; i < nke; i++) {
+		dsbmv_(&UPLO, &N, &K, &ALPHA, wt_gma, &LDA, &Bes[nke * i], &INCX, &BETA,
+		       &wtb[nke * i], &INCY);
+	}
+
+	TA = 'N';
+	TB = 'N';
+	M = nq;
+	K = nke;
+	N = nke;
+	LDA = nq;
+	LDB = nke;
+	LDC = nq;
+
+	dgemm_(&TA, &TB, &M, &N, &K, &ALPHA, Csq, &LDA, wtb, &LDB, &BETA, wbc, &LDC);
+
+	N = nke * nq;
+	K = 0;
+	LDA = 1;
+
+	dsbmv_(&UPLO, &N, &K, &ALPHA, Aeq, &LDA, wbc, &INCX, &BETA, gma, &INCY);
+
+	daxpy_(&N, &ALPHA, gma_mean, &INCX, gma, &INCY);
+
+	free(wtb);
+	free(wbc);
+}
+
 void get_fq_samples(double *fq, double *var_fq, const double *wt_gma, const double *A1,
 		    const double *B1, const double *A2, const double *B2, const double *C,
 		    const double *var_gma12, unsigned int ke_flag, unsigned long nq,
@@ -140,6 +193,88 @@ void get_fq_samples_reg(double *fq_reg, double *var_fq, const double *wt_gma, co
 
 	interpolate_gma(gma1, wt_gma, A1, B1, C, nq, nke);
 	interpolate_gma(gma2, wt_gma, A2, B2, C, nq, nke);
+
+	dsbmv_(&UPLO, &N, &K, &ALPHA, gma1, &LDA, gma2, &INCX, &BETA, fq, &INCY);
+
+	for (i = 0; i < nq; i++) {
+		fq[i] += var_gma12[2 * nq * (i) + (nq + i)];
+	}
+
+	dsbmv_(&UPLO, &N, &K, &ALPHA, fq, &LDA, reg12, &INCX, &BETA, fq_reg, &INCY);
+
+	if (var_gma12 && var_fq) {
+
+		N = 4 * nq * nq;
+
+		dsbmv_(&UPLO, &N, &K, &ALPHA, reg1x2, &LDA, var_gma12, &INCX, &BETA, var_gma12_reg,
+		       &INCY);
+
+		N = nq;
+
+		dsbmv_(&UPLO, &N, &K, &ALPHA, &reg12[ke_flag * nq], &LDA, &gma1[ke_flag * nq],
+		       &INCX, &BETA, gma1_reg, &INCY);
+
+		dsbmv_(&UPLO, &N, &K, &ALPHA, &reg12[ke_flag * nq], &LDA, &gma2[ke_flag * nq],
+		       &INCX, &BETA, gma2_reg, &INCY);
+
+		get_var_fq(var_fq, gma1_reg, gma2_reg, var_gma12_reg, nq);
+
+		dcopy_(&N, var_gma12_reg, &INCX, var_gma12, &INCY);
+	}
+
+	free(gma2);
+	free(gma1);
+	free(gma2_reg);
+	free(gma1_reg);
+	free(fq);
+	free(var_gma12_reg);
+}
+
+void get_fq_samples_reg_mean(double *fq_reg, double *var_fq, double *gma1_mean, double *gma2_mean,
+			     const double *exp_diag1, const double *exp_diag2, const double *wt_gma,
+			     const double *A1, const double *B1, const double *A2, const double *B2,
+			     const double *C, double *var_gma12, const double *reg12,
+			     const double *reg1x2, unsigned int ke_flag, unsigned long nq,
+			     unsigned long nke)
+{
+	double *gma1, *gma2, *gma1_reg, *gma2_reg, *fq, *var_gma12_reg;
+	int N, K, LDA, INCX, INCY;
+	unsigned long i;
+	unsigned char UPLO;
+	double ALPHA, BETA;
+
+	gma1 = malloc(nq * nke * sizeof(double));
+	assert(gma1);
+	gma2 = malloc(nq * nke * sizeof(double));
+	assert(gma2);
+
+	gma1_reg = malloc(nq * sizeof(double));
+	assert(gma1_reg);
+	gma2_reg = malloc(nq * sizeof(double));
+	assert(gma2_reg);
+
+	fq = malloc(nq * nke * sizeof(double));
+	assert(fq);
+
+	var_gma12_reg = malloc(4 * nq * nq * sizeof(double));
+	assert(var_gma12_reg);
+
+	N = nke * nq;
+	K = 0;
+	LDA = 1;
+	INCX = 1;
+	INCY = 1;
+	UPLO = 'L';
+	ALPHA = 1.0;
+	BETA = 0.0;
+
+	interpolate_gma_mean(gma1, gma1_mean, wt_gma, A1, B1, C, nq, nke);
+	interpolate_gma_mean(gma2, gma2_mean, wt_gma, A2, B2, C, nq, nke);
+
+	/* UPDATE PRIOR MEAN */
+
+	dsbmv_(&UPLO, &N, &K, &ALPHA, gma1, &LDA, exp_diag1, &INCX, &BETA, gma1_mean, &INCY);
+	dsbmv_(&UPLO, &N, &K, &ALPHA, gma2, &LDA, exp_diag2, &INCX, &BETA, gma2_mean, &INCY);
 
 	dsbmv_(&UPLO, &N, &K, &ALPHA, gma1, &LDA, gma2, &INCX, &BETA, fq, &INCY);
 

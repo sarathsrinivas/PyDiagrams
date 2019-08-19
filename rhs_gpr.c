@@ -92,6 +92,96 @@ void get_rhs_block(double *gma, double *var_gma, const double *gma0, const doubl
 	free(lknxx_gma);
 }
 
+void get_rhs_block_mean(double *gma, double *var_gma, const double *gma0, const double *var_gma0,
+			unsigned long nke, void *param)
+{
+	double *lknxx_gma, *kxx_gma, *wt_gma, *var_gma12, *ke_ct, *q_ct, *pke_ct, *wt_fq, *var_fq,
+	    *A1, *B1, *C, *A2, *B2, *lknxx_fq, *kxx_fq, *Iqe, *q_sph, *pq_sph, fac, kf, *IIe, *fqe,
+	    *ktt12, *ktx12, *kl12_ct, *reg12, *reg1x2, *gma_smp_mn, *gma1_lp_mn, *gma2_lp_mn;
+	unsigned long nq, nth, i;
+	unsigned int dimq, dimke, ke_flag;
+	struct rhs_param *par = param;
+
+	ke_ct = par->ke_ct;
+	q_ct = par->q_ct;
+	q_sph = par->q_sph;
+
+	kxx_gma = par->kxx_gma;
+	kxx_fq = par->kxx_fq;
+
+	Iqe = par->Iqe;
+	IIe = par->IIe;
+
+	pke_ct = par->pke_ct;
+	pq_sph = par->pq_sph;
+
+	A1 = par->A1;
+	B1 = par->B1;
+	A2 = par->A2;
+	B2 = par->B2;
+	C = par->C;
+
+	fac = par->fac;
+	kf = par->kf;
+
+	nth = par->nth;
+	nq = par->nq;
+	dimq = par->dimq;
+	dimke = par->dimke;
+	ke_flag = par->ke_flag;
+
+	ktt12 = par->ktt12;
+	ktx12 = par->ktx12;
+	kl12_ct = par->kl12_ct;
+
+	fqe = par->fqe;
+	var_fq = par->var_fq;
+	var_gma12 = par->var_gma12;
+
+	reg12 = par->reg12;
+	reg1x2 = par->reg1x2;
+
+	gma_smp_mn = par->gma_smp_mn;
+	gma1_lp_mn = par->gma1_lp_mn;
+	gma2_lp_mn = par->gma2_lp_mn;
+
+	exp_diag_lp1 = par->exp_diag_lp1;
+	exp_diag_lp2 = par->exp_diag_lp2;
+
+	lknxx_fq = malloc(nq * nq * sizeof(double));
+	assert(lknxx_fq);
+	lknxx_gma = malloc(nke * nke * sizeof(double));
+	assert(lknxx_gma);
+
+	wt_gma = malloc(nke * sizeof(double));
+	assert(wt_gma);
+	wt_fq = malloc(nke * nq * sizeof(double));
+	assert(wt_fq);
+
+	get_noise_covar_chd(lknxx_gma, kxx_gma, var_gma0, nke);
+
+	get_gma_weight_mean(wt_gma, lknxx_gma, gma0, gma_smp_mn, nke);
+
+	get_var_mat_chd(var_gma12, ktt12, ktx12, lknxx_gma, 2 * nq, nke);
+
+	get_fq_samples_reg_mean(fqe, var_fq, gma1_lp_mn, gma2_lp_mn, exp_diag_lp1, exp_diag_lp2,
+				wt_gma, A1, B1, A2, B2, C, var_gma12, reg12, reg1x2, ke_flag, nq,
+				nke);
+
+	get_noise_covar_chd(lknxx_fq, kxx_fq, var_fq, nq);
+
+	get_fq_weights_2(wt_fq, lknxx_fq, fqe, nq, nke);
+
+	get_gma_gpr_mean(gma, Iqe, wt_fq, nke, nq);
+
+	get_gma_gpr_var(var_gma, IIe, Iqe, lknxx_fq, nq, nke);
+
+	free(wt_fq);
+	free(wt_gma);
+	free(lknxx_fq);
+	free(lknxx_gma);
+}
+
 void get_rhs_ph(double *gma_2, double s, double *gma0_2, unsigned long n2ke, void *param)
 {
 	double *gma_zs, *gma_zsp, *var_gma_zs, *var_gma_zsp;
