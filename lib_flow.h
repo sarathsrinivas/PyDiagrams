@@ -2,7 +2,7 @@
 struct rhs_param {
 	double *ke_ct, *q_ct, *q_sph, *pke_ct, *pq_sph, *kxx_gma, *kxx_fq, *ktt12, *ktx12, *kl12_ct,
 	    *A1, *B1, *A2, *B2, *C, *Iqe, *IIe, *fqe, *var_fq, *var_gma12, *reg12, *reg1x2,
-	    *gma_smp_mn, *gma1_lp_mn, *gma2_lp_mn, *exp_diag_lp1, *exp_diag_lp2;
+	    *gma_smp_mn, *exp_diag_smp, *gma1_lp_mn, *gma2_lp_mn, *exp_diag_lp1, *exp_diag_lp2;
 	double fac, kf;
 	unsigned int dimke, dimq, ke_flag;
 	unsigned long nq, nth;
@@ -244,7 +244,7 @@ void get_gma_gpr_mean(double *gma_gpr, const double *Ifq, const double *wfq, uns
 void get_gma_gpr_var(double *var_gma_gpr, const double *II, const double *Iqe, const double *lknqq,
 		     unsigned long nq, unsigned long nke);
 void get_gma_weight(double *wt_gma, const double *lknxx_gma, const double *gma, unsigned long nke);
-void get_gma_weight_mean(double *wt_gma, const double *lknxx_gma, const double *gma,
+void get_gma_weight_mean(double *wt_gma, const double *lknxx_gma, double *gma,
 			 const double *gma_mean, unsigned long nke);
 void get_noisy_inverse(double *wt, const double *lkqq, const double *var, const double *y,
 		       unsigned long nq, unsigned long nke);
@@ -266,8 +266,9 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 		    double *q_sph, unsigned long nq, unsigned int dimq, double *pke_ct,
 		    double *pq_sph, unsigned long nqr, unsigned long nth, unsigned long nphi,
 		    double fac, double kf, unsigned int ke_flag, double reg_mn_max,
-		    double reg_mn_eps, double reg_var_max, double reg_var_eps, double *work,
-		    unsigned long work_sz);
+		    double reg_mn_eps, double reg_var_max, double reg_var_eps, double ode_step,
+		    void (*fillpot)(double *, double *, unsigned long, unsigned int, double *),
+		    double *vparam, double *work, unsigned long work_sz);
 void free_rhs_param(struct rhs_param *par);
 unsigned long get_work_sz_rhs_diff_param(unsigned long nke, unsigned int dimke, unsigned long nq,
 					 unsigned int dimq);
@@ -283,9 +284,10 @@ void test_get_abs_max(unsigned int n, int seed);
 /* RHS */
 void get_rhs_block(double *gma, double *var_gma, const double *gma0, const double *var_gma0,
 		   unsigned long nke, void *param);
-void get_rhs_block_mean(double *gma, double *var_gma, const double *gma0, const double *var_gma0,
+void get_rhs_block_mean(double *gma, double *var_gma, double *gma0, double *var_gma0,
 			unsigned long nke, void *param);
 void get_rhs_ph(double *gma_2, double s, double *gma0_2, unsigned long n2ke, void *param);
+void get_rhs_ph_mean(double *gma_2, double s, double *gma0_2, unsigned long n2ke, void *param);
 void get_rhs_ph_lin(double *gma_2, double s, double *gma0_2, unsigned long n2ke, void *param);
 void get_rhs_diff_block(double *gma, double *var_gma, const double *gma0_zs,
 			const double *var_gma0_zs, const double *gma0_zsp,

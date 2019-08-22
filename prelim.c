@@ -121,6 +121,13 @@ unsigned long get_work_sz_rhs_param(unsigned long nke, unsigned int dimke, unsig
 	sz_alloc += nq * nke;    /* reg12 */
 	sz_alloc += 4 * nq * nq; /* reg1x2 */
 
+	sz_alloc += nke;      /* gma_smp_mn */
+	sz_alloc += nke;      /* exp_diag_smp */
+	sz_alloc += nq * nke; /* gma1_lp_mn */
+	sz_alloc += nq * nke; /* gma2_lp_mn */
+	sz_alloc += nq * nke; /* exp_diag_lp1 */
+	sz_alloc += nq * nke; /* exp_diag_lp2 */
+
 	return sz_alloc;
 }
 
@@ -128,13 +135,15 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 		    double *q_sph, unsigned long nq, unsigned int dimq, double *pke_ct,
 		    double *pq_sph, unsigned long nqr, unsigned long nth, unsigned long nphi,
 		    double fac, double kf, unsigned int ke_flag, double reg_mn_max,
-		    double reg_mn_eps, double reg_var_max, double reg_var_eps, double *work,
-		    unsigned long work_sz)
+		    double reg_mn_eps, double reg_var_max, double reg_var_eps, double ode_step,
+		    void (*fillpot)(double *, double *, unsigned long, unsigned int, double *),
+		    double *vparam, double *work, unsigned long work_sz)
 {
 	double *q_ct, *kxx_gma, *kxx_fq, *A1, *A2, *B1, *B2, *C, *Iqe, *IIe, *kl12_ct, *kl12_ct_p,
 	    *ktx12, *ktt12, *fqe, *var_fq, *var_gma12, *reg12, *reg1x2, *reg1, *reg2, *reg_kl12,
-	    *var_gma_in, *var_gma_out, ALPHA, BETA;
-	unsigned long sz_alloc, work_sz_chk, npke, npq;
+	    *var_gma_in, *var_gma_out, ALPHA, BETA, *gma_smp_mn, *gma1_lp_mn, *gma2_lp_mn,
+	    *exp_diag_lp1, *exp_diag_lp2, *exp_diag_smp, *kl1, *kl2, D, *gma0_lp1, *gma0_lp2;
+	unsigned long sz_alloc, work_sz_chk, npke, npq, i, j;
 	int N, LDA, K, INCX, INCY;
 	unsigned char UPLO;
 
@@ -188,6 +197,21 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	reg1x2 = &work[sz_alloc];
 	sz_alloc += 4 * nq * nq;
 
+	gma_smp_mn = &work[sz_alloc];
+	sz_alloc += nke;
+	exp_diag_smp = &work[sz_alloc];
+	sz_alloc += nke;
+
+	gma1_lp_mn = &work[sz_alloc];
+	sz_alloc += nke * nq;
+	gma2_lp_mn = &work[sz_alloc];
+	sz_alloc += nke * nq;
+
+	exp_diag_lp1 = &work[sz_alloc];
+	sz_alloc += nke * nq;
+	exp_diag_lp2 = &work[sz_alloc];
+	sz_alloc += nke * nq;
+
 	assert(sz_alloc == work_sz_chk);
 
 	reg1 = malloc(nq * nke * sizeof(double));
@@ -196,6 +220,16 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	assert(reg2);
 	reg_kl12 = malloc(2 * nq * sizeof(double));
 	assert(reg_kl12);
+
+	kl1 = malloc(nq * sizeof(double));
+	assert(kl1);
+	kl2 = malloc(nq * sizeof(double));
+	assert(kl2);
+
+	gma0_lp1 = malloc(nq * nke * sizeof(double));
+	assert(gma0_lp1);
+	gma0_lp2 = malloc(nq * nke * sizeof(double));
+	assert(gma0_lp2);
 
 	npke = dimke + 1;
 	npq = dimq + 1;
@@ -241,6 +275,50 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 
 	dger_(&N, &N, &ALPHA, reg_kl12, &INCX, reg_kl12, &INCY, reg1x2, &LDA);
 
+	/* GET MEAN FOR STIFF ODE */
+
+	for (i = 0; i < nke; i++) {
+		D = get_energy_ext_7d_ct(&ke_ct[dimke * i], dimke);
+		D = -1.0 * D * D;
+
+		exp_diag_smp[i] = exp(ode_step * D);
+	}
+
+	for (i = 0; i < nke; i++) {
+
+		get_zs_loop_mom_7d_ct(kl1, kl2, &ke_ct[dimke * i], dimke, q_ct, nq, dimq);
+
+		for (j = 0; j < nq; j++) {
+
+			D = get_energy_ext_7d_ct(&kl1[dimke * j], dimke);
+			D = -1.0 * D * D;
+			exp_diag_lp1[i * nq + j] = exp(ode_step * D);
+
+			D = get_energy_ext_7d_ct(&kl2[dimke * j], dimke);
+			D = -1.0 * D * D;
+			exp_diag_lp2[i * nq + j] = exp(ode_step * D);
+		}
+	}
+
+	for (i = 0; i < nke; i++) {
+		fillpot(&gma0_lp1[i * nq], kl1, nq, dimke, vparam);
+		fillpot(&gma0_lp2[i * nq], kl2, nq, dimke, vparam);
+	}
+
+	N = nq * nke;
+	K = 0;
+	LDA = 1;
+	INCX = 1;
+	INCY = 1;
+	UPLO = 'L';
+	ALPHA = 1.0;
+	BETA = 0.0;
+
+	dsbmv_(&UPLO, &N, &K, &ALPHA, gma0_lp1, &LDA, exp_diag_lp1, &INCX, &BETA, gma1_lp_mn,
+	       &INCY);
+	dsbmv_(&UPLO, &N, &K, &ALPHA, gma0_lp2, &LDA, exp_diag_lp2, &INCX, &BETA, gma2_lp_mn,
+	       &INCY);
+
 	par->ke_ct = ke_ct;
 	par->q_sph = q_sph;
 	par->q_ct = q_ct;
@@ -271,6 +349,12 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	par->reg12 = reg12;
 	par->reg1x2 = reg1x2;
 
+	par->exp_diag_smp = exp_diag_smp;
+	par->exp_diag_lp1 = exp_diag_lp1;
+	par->exp_diag_lp2 = exp_diag_lp2;
+	par->gma1_lp_mn = gma1_lp_mn;
+	par->gma2_lp_mn = gma2_lp_mn;
+
 	par->kf = kf;
 	par->ke_flag = ke_flag;
 	par->fac = fac;
@@ -282,6 +366,10 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	free(reg1);
 	free(reg2);
 	free(reg_kl12);
+	free(kl1);
+	free(kl2);
+	free(gma0_lp1);
+	free(gma0_lp2);
 }
 
 unsigned long get_work_sz_rhs_diff_param(unsigned long nke, unsigned int dimke, unsigned long nq,

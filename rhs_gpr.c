@@ -92,12 +92,13 @@ void get_rhs_block(double *gma, double *var_gma, const double *gma0, const doubl
 	free(lknxx_gma);
 }
 
-void get_rhs_block_mean(double *gma, double *var_gma, const double *gma0, const double *var_gma0,
+void get_rhs_block_mean(double *gma, double *var_gma, double *gma0, double *var_gma0,
 			unsigned long nke, void *param)
 {
 	double *lknxx_gma, *kxx_gma, *wt_gma, *var_gma12, *ke_ct, *q_ct, *pke_ct, *wt_fq, *var_fq,
 	    *A1, *B1, *C, *A2, *B2, *lknxx_fq, *kxx_fq, *Iqe, *q_sph, *pq_sph, fac, kf, *IIe, *fqe,
-	    *ktt12, *ktx12, *kl12_ct, *reg12, *reg1x2, *gma_smp_mn, *gma1_lp_mn, *gma2_lp_mn;
+	    *ktt12, *ktx12, *kl12_ct, *reg12, *reg1x2, *gma_smp_mn, *gma1_lp_mn, *gma2_lp_mn,
+	    *exp_diag_lp1, *exp_diag_lp2;
 	unsigned long nq, nth, i;
 	unsigned int dimq, dimke, ke_flag;
 	struct rhs_param *par = param;
@@ -206,6 +207,61 @@ void get_rhs_ph(double *gma_2, double s, double *gma0_2, unsigned long n2ke, voi
 
 	get_rhs_block(gma_zs, var_gma_zs, gma0_2, &gma0_2[nke], nke, &par_zs);
 	get_rhs_block(gma_zsp, var_gma_zsp, gma0_2, &gma0_2[nke], nke, &par_zsp);
+
+	for (i = 0; i < nke; i++) {
+		gma_2[i] = gma_zs[i] - gma_zsp[i];
+		gma_2[nke + i] = var_gma_zs[i] + var_gma_zsp[i];
+	}
+
+	free(gma_zs);
+	free(gma_zsp);
+	free(var_gma_zs);
+	free(var_gma_zsp);
+}
+
+void get_rhs_ph_mean(double *gma_2, double s, double *gma0_2, unsigned long n2ke, void *param)
+{
+	double *gma_zs, *gma_zsp, *var_gma_zs, *var_gma_zsp, ALPHA, BETA;
+	unsigned char UPLO;
+	unsigned long i, nke;
+	int N, K, LDA, INCX, INCY;
+	struct rhs_param par_zs, par_zsp;
+	struct rhs_param *par = param;
+
+	nke = n2ke / 2;
+
+	gma_zs = malloc(nke * sizeof(double));
+	assert(gma_zs);
+	gma_zsp = malloc(nke * sizeof(double));
+	assert(gma_zsp);
+
+	var_gma_zs = malloc(nke * sizeof(double));
+	assert(var_gma_zs);
+	var_gma_zsp = malloc(nke * sizeof(double));
+	assert(var_gma_zsp);
+
+	par_zs = par[0];
+	par_zsp = par[1];
+
+	/* UPDATE MEAN OF SAMPLES */
+
+	N = nke;
+	K = 0;
+	LDA = 1;
+	INCX = 1;
+	INCY = 1;
+	UPLO = 'L';
+	ALPHA = 1.0;
+	BETA = 0.0;
+
+	dsbmv_(&UPLO, &N, &K, &ALPHA, gma0_2, &LDA, par[0].exp_diag_smp, &INCX, &BETA,
+	       par[0].gma_smp_mn, &INCY);
+	dcopy_(&N, par[0].gma_smp_mn, &INCX, par[1].gma_smp_mn, &INCY);
+
+	/* GET BLOCK PREDICTION */
+
+	get_rhs_block_mean(gma_zs, var_gma_zs, gma0_2, &gma0_2[nke], nke, &par_zs);
+	get_rhs_block_mean(gma_zsp, var_gma_zsp, gma0_2, &gma0_2[nke], nke, &par_zsp);
 
 	for (i = 0; i < nke; i++) {
 		gma_2[i] = gma_zs[i] - gma_zsp[i];

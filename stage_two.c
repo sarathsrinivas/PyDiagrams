@@ -157,7 +157,7 @@ void get_gma_weight(double *wt_gma, const double *lknxx_gma, const double *gma, 
 	assert(INFO == 0);
 }
 
-void get_gma_weight_mean(double *wt_gma, const double *lknxx_gma, const double *gma,
+void get_gma_weight_mean(double *wt_gma, const double *lknxx_gma, double *gma,
 			 const double *gma_mean, unsigned long nke)
 {
 
