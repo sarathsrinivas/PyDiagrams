@@ -281,7 +281,7 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 		D = get_energy_ext_7d_ct(&ke_ct[dimke * i], dimke);
 		D = -1.0 * D * D;
 
-		exp_diag_smp[i] = exp(ode_step * D);
+		exp_diag_smp[i] = exp(ode_step * D) - 1.0;
 	}
 
 	for (i = 0; i < nke; i++) {
@@ -292,11 +292,11 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 
 			D = get_energy_ext_7d_ct(&kl1[dimke * j], dimke);
 			D = -1.0 * D * D;
-			exp_diag_lp1[i * nq + j] = exp(ode_step * D);
+			exp_diag_lp1[i * nq + j] = exp(ode_step * D) - 1.0;
 
 			D = get_energy_ext_7d_ct(&kl2[dimke * j], dimke);
 			D = -1.0 * D * D;
-			exp_diag_lp2[i * nq + j] = exp(ode_step * D);
+			exp_diag_lp2[i * nq + j] = exp(ode_step * D) - 1.0;
 		}
 	}
 
