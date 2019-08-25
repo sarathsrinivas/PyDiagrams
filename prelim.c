@@ -4,6 +4,7 @@
 #include <math.h>
 #include <time.h>
 #include <lib_io/lib_io.h>
+#include <lib_ode/lib_ode.h>
 #include <lib_rng/lib_rng.h>
 #include <lib_gpr/lib_gpr.h>
 #include <lib_pots/lib_pots.h>
@@ -372,6 +373,123 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	free(gma0_lp2);
 }
 
+static void get_rhs_exct(double *rhs_gma1, double s, double *gma0, unsigned long nke, void *param)
+{
+	struct rhs_exct_param *par = param;
+
+	get_rhs_num(rhs_gma1, par->ke_ct, nke, par->dimke, par->kf, par->nqr, par->nth, par->nphi,
+		    par->fun_pot, par->vparam);
+}
+
+void get_first_step_etd34rk(double *gma1, double *J, double *ke_ct, unsigned long nke,
+			    unsigned int dimke, double h, double kf, unsigned long nqr,
+			    unsigned long nth, unsigned long nphi,
+			    double (*vfun)(double *, unsigned int, double *), double *vparam)
+{
+	double *gma0, *work, *alp, *bet, *gam, *exp_jh2, *enf_jh2, *enf_jh, t, *eg;
+	unsigned long nwork, i, ncv, j;
+	struct rhs_exct_param *par;
+
+	par = malloc(sizeof(struct rhs_exct_param));
+	assert(par);
+
+	par->ke_ct = ke_ct;
+	par->dimke = dimke;
+	par->nqr = nqr;
+	par->nth = nphi;
+	par->nphi = nth;
+	par->fun_pot = vfun;
+	par->vparam = vparam;
+
+	nwork = get_work_sz_rk45(nke);
+
+	work = malloc(nwork * sizeof(double));
+	assert(work);
+
+	gma0 = malloc(nke * sizeof(double));
+	assert(gma0);
+	eg = malloc(nke * sizeof(double));
+	assert(eg);
+
+	exp_jh2 = malloc(nke * sizeof(double));
+	assert(exp_jh2);
+	enf_jh2 = malloc(nke * sizeof(double));
+	assert(enf_jh2);
+	enf_jh = malloc(nke * sizeof(double));
+	assert(enf_jh);
+	alp = malloc(nke * sizeof(double));
+	assert(alp);
+	bet = malloc(nke * sizeof(double));
+	assert(bet);
+	gam = malloc(nke * sizeof(double));
+	assert(gam);
+
+	for (i = 0; i < nke; i++) {
+		eg[i] = 0;
+		gma0[i] = vfun(&ke_ct[dimke * i], dimke, vparam);
+	}
+
+	get_expz(exp_jh2, J, 0.5 * h, nke);
+	get_enf(enf_jh2, J, 0.5 * h, nke);
+	get_enf(enf_jh, J, h, nke);
+	get_etd4rk_coeff(alp, bet, gam, J, h, nke);
+
+	etd34rk_vec_step(0, nke, gma0, h, J, exp_jh2, enf_jh2, enf_jh, alp, bet, gam, get_rhs_exct,
+			 par, gma1, eg, work, nwork);
+
+	free(work);
+	free(gma0);
+	free(alp);
+	free(bet);
+	free(gam);
+	free(exp_jh2);
+	free(enf_jh);
+	free(enf_jh2);
+	free(eg);
+}
+
+void get_first_step_rk45(double *gma1, double *ke_ct, unsigned long nke, unsigned int dimke,
+			 double h, double kf, unsigned long nqr, unsigned long nth,
+			 unsigned long nphi, double (*vfun)(double *, unsigned int, double *),
+			 double *vparam)
+{
+	double *gma0, *work, *eg;
+	unsigned long nwork, i, ncv, j;
+	struct rhs_exct_param *par;
+
+	par = malloc(sizeof(struct rhs_exct_param));
+	assert(par);
+
+	par->ke_ct = ke_ct;
+	par->dimke = dimke;
+	par->nqr = nqr;
+	par->nth = nphi;
+	par->nphi = nth;
+	par->fun_pot = vfun;
+	par->vparam = vparam;
+
+	nwork = get_work_sz_etd34rk(nke);
+
+	work = malloc(nwork * sizeof(double));
+	assert(work);
+
+	gma0 = malloc(nke * sizeof(double));
+	assert(gma0);
+	eg = malloc(nke * sizeof(double));
+	assert(eg);
+
+	for (i = 0; i < nke; i++) {
+		eg[i] = 0;
+		gma0[i] = vfun(&ke_ct[dimke * i], dimke, vparam);
+	}
+
+	rk45vec_step(0, nke, gma0, h, get_rhs_exct, par, gma1, eg, work, nwork);
+
+	free(work);
+	free(gma0);
+	free(eg);
+}
+
 unsigned long get_work_sz_rhs_diff_param(unsigned long nke, unsigned int dimke, unsigned long nq,
 					 unsigned int dimq)
 
@@ -583,7 +701,6 @@ void init_rhs_diff_param(struct rhs_diff_param *par, double *ke_ct, unsigned lon
 
 void test_get_abs_max(unsigned int n, int seed)
 {
-
 	unsigned int i;
 	double max, *k;
 	dsfmt_t drng;
