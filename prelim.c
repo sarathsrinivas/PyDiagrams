@@ -407,8 +407,8 @@ void get_first_step_etd34rk(double *gma_exct, double *ke_ct, unsigned long nke, 
 	par->ke_ct = ke_ct;
 	par->dimke = dimke;
 	par->nqr = nqr;
-	par->nth = nphi;
-	par->nphi = nth;
+	par->nth = nth;
+	par->nphi = nphi;
 	par->fun_pot = vfun;
 	par->vparam = vparam;
 
@@ -522,8 +522,8 @@ void get_first_step_rk45(double *gma_exct, double *ke_ct, unsigned long nke, uns
 	par->ke_ct = ke_ct;
 	par->dimke = dimke;
 	par->nqr = nqr;
-	par->nth = nphi;
-	par->nphi = nth;
+	par->nth = nth;
+	par->nphi = nphi;
 	par->fun_pot = vfun;
 	par->vparam = vparam;
 
