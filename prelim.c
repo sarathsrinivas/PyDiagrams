@@ -437,6 +437,7 @@ void get_first_step_etd34rk(double *gma1, double *J, double *ke_ct, unsigned lon
 	etd34rk_vec_step(0, nke, gma0, h, J, exp_jh2, enf_jh2, enf_jh, alp, bet, gam, get_rhs_exct,
 			 par, gma1, eg, work, nwork);
 
+	free(par);
 	free(work);
 	free(gma0);
 	free(alp);
