@@ -412,28 +412,11 @@ void get_first_step_etd34rk(double *gma_exct, double *ke_ct, unsigned long nke, 
 	par->fun_pot = vfun;
 	par->vparam = vparam;
 
-	nwork = get_work_sz_etd34rk(nke);
-
-	work = malloc(nwork * sizeof(double));
-	assert(work);
-
 	gma0 = malloc(nke * sizeof(double));
 	assert(gma0);
 	J = malloc(nke * sizeof(double));
 	assert(J);
 
-	exp_jh2 = malloc(nke * sizeof(double));
-	assert(exp_jh2);
-	enf_jh2 = malloc(nke * sizeof(double));
-	assert(enf_jh2);
-	enf_jh = malloc(nke * sizeof(double));
-	assert(enf_jh);
-	alp = malloc(nke * sizeof(double));
-	assert(alp);
-	bet = malloc(nke * sizeof(double));
-	assert(bet);
-	gam = malloc(nke * sizeof(double));
-	assert(gam);
 	eg = malloc(nke * sizeof(double));
 	assert(eg);
 
@@ -444,24 +427,10 @@ void get_first_step_etd34rk(double *gma_exct, double *ke_ct, unsigned long nke, 
 
 	get_diag(J, ke_ct, nke, dimke);
 
-	get_expz(exp_jh2, J, 0.5 * h, nke);
-	get_enf(enf_jh2, J, 0.5 * h, nke);
-	get_enf(enf_jh, J, h, nke);
-	get_etd4rk_coeff(alp, bet, gam, J, h, nke);
-
-	etd34rk_vec_step(0, nke, gma0, h, J, exp_jh2, enf_jh2, enf_jh, alp, bet, gam, get_rhs_exct,
-			 par, gma_exct, eg, work, nwork);
+	etd34rk_vec(0.1 * h, h, h, gma0, nke, J, get_rhs_exct, par, eg);
 
 	free(par);
-	free(work);
-	free(J);
 	free(gma0);
-	free(alp);
-	free(bet);
-	free(gam);
-	free(exp_jh2);
-	free(enf_jh);
-	free(enf_jh2);
 	free(eg);
 }
 
