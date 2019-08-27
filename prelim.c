@@ -412,7 +412,7 @@ void get_first_step_etd34rk(double *gma_exct, double *ke_ct, unsigned long nke, 
 	par->fun_pot = vfun;
 	par->vparam = vparam;
 
-	nwork = get_work_sz_rk45(nke);
+	nwork = get_work_sz_etd34rk(nke);
 
 	work = malloc(nwork * sizeof(double));
 	assert(work);
@@ -527,7 +527,7 @@ void get_first_step_rk45(double *gma_exct, double *ke_ct, unsigned long nke, uns
 	par->fun_pot = vfun;
 	par->vparam = vparam;
 
-	nwork = get_work_sz_etd34rk(nke);
+	nwork = get_work_sz_rk45(nke);
 
 	work = malloc(nwork * sizeof(double));
 	assert(work);
