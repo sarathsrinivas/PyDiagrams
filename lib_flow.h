@@ -279,14 +279,22 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 		    void (*fillpot)(double *, double *, unsigned long, unsigned int, double *),
 		    double *vparam, double *work, unsigned long work_sz);
 void get_diag(double *diag, const double *ke_ct, unsigned long nke, unsigned int dimke);
-void get_first_step_etd34rk(double *gma1, double *J, double *ke_ct, unsigned long nke,
-			    unsigned int dimke, double h, double kf, unsigned long nqr,
-			    unsigned long nth, unsigned long nphi,
-			    double (*vfun)(double *, unsigned int, double *), double *vparam);
+void get_first_step_etd34rk(double *gma_exct, double *ke_ct, unsigned long nke, unsigned int dimke,
+			    double h, double kf, unsigned long nqr, unsigned long nth,
+			    unsigned long nphi, double (*vfun)(double *, unsigned int, double *),
+			    double *vparam);
+void get_first_step_fq_etd34rk(double *fq_exct, double *ke_ct, double *q_ct, unsigned long nq,
+			       unsigned int dimke, unsigned int dimq, int ke_flag, double h,
+			       double kf, unsigned long nqr, unsigned long nth, unsigned long nphi,
+			       double (*vfun)(double *, unsigned int, double *), double *vparam);
 void get_first_step_rk45(double *gma1, double *ke_ct, unsigned long nke, unsigned int dimke,
 			 double h, double kf, unsigned long nqr, unsigned long nth,
 			 unsigned long nphi, double (*vfun)(double *, unsigned int, double *),
 			 double *vparam);
+void get_first_step_fq_rk45(double *fq_exct, double *ke_ct, double *q_ct, unsigned long nq,
+			    unsigned int dimke, unsigned int dimq, int ke_flag, double h, double kf,
+			    unsigned long nqr, unsigned long nth, unsigned long nphi,
+			    double (*vfun)(double *, unsigned int, double *), double *vparam);
 void free_rhs_param(struct rhs_param *par);
 unsigned long get_work_sz_rhs_diff_param(unsigned long nke, unsigned int dimke, unsigned long nq,
 					 unsigned int dimq);

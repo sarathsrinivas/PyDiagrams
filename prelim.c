@@ -392,12 +392,12 @@ static void get_rhs_exct(double *rhs_gma1, double s, double *gma0, unsigned long
 		    par->fun_pot, par->vparam);
 }
 
-void get_first_step_etd34rk(double *gma1, double *J, double *ke_ct, unsigned long nke,
-			    unsigned int dimke, double h, double kf, unsigned long nqr,
-			    unsigned long nth, unsigned long nphi,
-			    double (*vfun)(double *, unsigned int, double *), double *vparam)
+void get_first_step_etd34rk(double *gma_exct, double *ke_ct, unsigned long nke, unsigned int dimke,
+			    double h, double kf, unsigned long nqr, unsigned long nth,
+			    unsigned long nphi, double (*vfun)(double *, unsigned int, double *),
+			    double *vparam)
 {
-	double *gma0, *work, *alp, *bet, *gam, *exp_jh2, *enf_jh2, *enf_jh, t, *eg;
+	double *gma0, *work, *alp, *bet, *gam, *exp_jh2, *enf_jh2, *enf_jh, t, *eg, *J;
 	unsigned long nwork, i, ncv, j;
 	struct rhs_exct_param *par;
 
@@ -419,8 +419,8 @@ void get_first_step_etd34rk(double *gma1, double *J, double *ke_ct, unsigned lon
 
 	gma0 = malloc(nke * sizeof(double));
 	assert(gma0);
-	eg = malloc(nke * sizeof(double));
-	assert(eg);
+	J = malloc(nke * sizeof(double));
+	assert(J);
 
 	exp_jh2 = malloc(nke * sizeof(double));
 	assert(exp_jh2);
@@ -434,11 +434,15 @@ void get_first_step_etd34rk(double *gma1, double *J, double *ke_ct, unsigned lon
 	assert(bet);
 	gam = malloc(nke * sizeof(double));
 	assert(gam);
+	eg = malloc(nke * sizeof(double));
+	assert(eg);
 
 	for (i = 0; i < nke; i++) {
 		eg[i] = 0;
 		gma0[i] = vfun(&ke_ct[dimke * i], dimke, vparam);
 	}
+
+	get_diag(J, ke_ct, nke, dimke);
 
 	get_expz(exp_jh2, J, 0.5 * h, nke);
 	get_enf(enf_jh2, J, 0.5 * h, nke);
@@ -446,10 +450,11 @@ void get_first_step_etd34rk(double *gma1, double *J, double *ke_ct, unsigned lon
 	get_etd4rk_coeff(alp, bet, gam, J, h, nke);
 
 	etd34rk_vec_step(0, nke, gma0, h, J, exp_jh2, enf_jh2, enf_jh, alp, bet, gam, get_rhs_exct,
-			 par, gma1, eg, work, nwork);
+			 par, gma_exct, eg, work, nwork);
 
 	free(par);
 	free(work);
+	free(J);
 	free(gma0);
 	free(alp);
 	free(bet);
@@ -460,7 +465,49 @@ void get_first_step_etd34rk(double *gma1, double *J, double *ke_ct, unsigned lon
 	free(eg);
 }
 
-void get_first_step_rk45(double *gma1, double *ke_ct, unsigned long nke, unsigned int dimke,
+void get_first_step_fq_etd34rk(double *fq_exct, double *ke_ct, double *q_ct, unsigned long nq,
+			       unsigned int dimke, unsigned int dimq, int ke_flag, double h,
+			       double kf, unsigned long nqr, unsigned long nth, unsigned long nphi,
+			       double (*vfun)(double *, unsigned int, double *), double *vparam)
+{
+	double *gma_lp1, *gma_lp2, *kl1, *kl2;
+	int N, K, LDA, INCX, INCY;
+	unsigned char UPLO;
+	double ALPHA, BETA;
+
+	gma_lp1 = malloc(nq * sizeof(double));
+	assert(gma_lp1);
+	gma_lp2 = malloc(nq * sizeof(double));
+	assert(gma_lp2);
+
+	kl1 = malloc(nq * dimke * sizeof(double));
+	assert(kl1);
+	kl2 = malloc(nq * dimke * sizeof(double));
+	assert(kl2);
+
+	get_zs_loop_mom_7d_ct(kl1, kl2, &ke_ct[ke_flag * dimke], dimke, q_ct, nq, dimq);
+
+	get_first_step_etd34rk(gma_lp1, kl1, nq, dimke, h, kf, nqr, nth, nphi, vfun, vparam);
+	get_first_step_etd34rk(gma_lp2, kl2, nq, dimke, h, kf, nqr, nth, nphi, vfun, vparam);
+
+	N = nq;
+	K = 0;
+	LDA = 1;
+	INCX = 1;
+	INCY = 1;
+	UPLO = 'L';
+	ALPHA = 1.0;
+	BETA = 0.0;
+
+	dsbmv_(&UPLO, &N, &K, &ALPHA, gma_lp1, &LDA, gma_lp2, &INCX, &BETA, fq_exct, &INCY);
+
+	free(gma_lp1);
+	free(gma_lp2);
+	free(kl1);
+	free(kl2);
+}
+
+void get_first_step_rk45(double *gma_exct, double *ke_ct, unsigned long nke, unsigned int dimke,
 			 double h, double kf, unsigned long nqr, unsigned long nth,
 			 unsigned long nphi, double (*vfun)(double *, unsigned int, double *),
 			 double *vparam)
@@ -495,11 +542,54 @@ void get_first_step_rk45(double *gma1, double *ke_ct, unsigned long nke, unsigne
 		gma0[i] = vfun(&ke_ct[dimke * i], dimke, vparam);
 	}
 
-	rk45vec_step(0, nke, gma0, h, get_rhs_exct, par, gma1, eg, work, nwork);
+	rk45vec_step(0, nke, gma0, h, get_rhs_exct, par, gma_exct, eg, work, nwork);
 
+	free(par);
 	free(work);
 	free(gma0);
 	free(eg);
+}
+
+void get_first_step_fq_rk45(double *fq_exct, double *ke_ct, double *q_ct, unsigned long nq,
+			    unsigned int dimke, unsigned int dimq, int ke_flag, double h, double kf,
+			    unsigned long nqr, unsigned long nth, unsigned long nphi,
+			    double (*vfun)(double *, unsigned int, double *), double *vparam)
+{
+	double *gma_lp1, *gma_lp2, *kl1, *kl2;
+	int N, K, LDA, INCX, INCY;
+	unsigned char UPLO;
+	double ALPHA, BETA;
+
+	gma_lp1 = malloc(nq * sizeof(double));
+	assert(gma_lp1);
+	gma_lp2 = malloc(nq * sizeof(double));
+	assert(gma_lp2);
+
+	kl1 = malloc(nq * dimke * sizeof(double));
+	assert(kl1);
+	kl2 = malloc(nq * dimke * sizeof(double));
+	assert(kl2);
+
+	get_zs_loop_mom_7d_ct(kl1, kl2, &ke_ct[ke_flag * dimke], dimke, q_ct, nq, dimq);
+
+	get_first_step_rk45(gma_lp1, kl1, nq, dimke, h, kf, nqr, nth, nphi, vfun, vparam);
+	get_first_step_rk45(gma_lp2, kl2, nq, dimke, h, kf, nqr, nth, nphi, vfun, vparam);
+
+	N = nq;
+	K = 0;
+	LDA = 1;
+	INCX = 1;
+	INCY = 1;
+	UPLO = 'L';
+	ALPHA = 1.0;
+	BETA = 0.0;
+
+	dsbmv_(&UPLO, &N, &K, &ALPHA, gma_lp1, &LDA, gma_lp2, &INCX, &BETA, fq_exct, &INCY);
+
+	free(gma_lp1);
+	free(gma_lp2);
+	free(kl1);
+	free(kl2);
 }
 
 unsigned long get_work_sz_rhs_diff_param(unsigned long nke, unsigned int dimke, unsigned long nq,
