@@ -400,6 +400,7 @@ void get_first_step_etd34rk(double *gma_exct, double *ke_ct, unsigned long nke, 
 	double *gma0, *work, *alp, *bet, *gam, *exp_jh2, *enf_jh2, *enf_jh, t, *eg, *J;
 	unsigned long nwork, i, ncv, j;
 	struct rhs_exct_param *par;
+	int N, INCX, INCY;
 
 	par = malloc(sizeof(struct rhs_exct_param));
 	assert(par);
@@ -429,6 +430,11 @@ void get_first_step_etd34rk(double *gma_exct, double *ke_ct, unsigned long nke, 
 	get_diag(J, ke_ct, nke, dimke);
 
 	etd34rk_vec(0.1 * h, h, h, gma0, nke, J, get_rhs_exct, par, eg);
+
+	N = nke;
+	INCX = 1;
+	INCY = 1;
+	dcopy_(&N, gma0, &INCX, gma_exct, &INCY);
 
 	free(par);
 	free(gma0);
