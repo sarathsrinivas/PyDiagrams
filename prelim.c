@@ -373,6 +373,17 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	free(gma0_lp2);
 }
 
+void get_diag(double *diag, const double *ke_ct, unsigned long nke, unsigned int dimke)
+{
+	double D;
+	unsigned long i;
+
+	for (i = 0; i < nke; i++) {
+		D = get_energy_ext_7d_ct(&ke_ct[dimke * i], dimke);
+		diag[i] = -1.0 * D * D;
+	}
+}
+
 static void get_rhs_exct(double *rhs_gma1, double s, double *gma0, unsigned long nke, void *param)
 {
 	struct rhs_exct_param *par = param;
