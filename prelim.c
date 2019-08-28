@@ -143,7 +143,8 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	double *q_ct, *kxx_gma, *kxx_fq, *A1, *A2, *B1, *B2, *C, *Iqe, *IIe, *kl12_ct, *kl12_ct_p,
 	    *ktx12, *ktt12, *fqe, *var_fq, *var_gma12, *reg12, *reg1x2, *reg1, *reg2, *reg_kl12,
 	    *var_gma_in, *var_gma_out, ALPHA, BETA, *gma_smp_mn, *gma1_lp_mn, *gma2_lp_mn,
-	    *exp_diag_lp1, *exp_diag_lp2, *exp_diag_smp, *kl1, *kl2, D, *gma0_lp1, *gma0_lp2;
+	    *exp_diag_lp1, *exp_diag_lp2, *exp_diag_smp, *kl1, *kl2, D, *gma0_lp1, *gma0_lp2,
+	    *id_vec;
 	unsigned long sz_alloc, work_sz_chk, npke, npq, i, j;
 	int N, LDA, K, INCX, INCY;
 	unsigned char UPLO;
@@ -278,27 +279,14 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 
 	/* GET MEAN FOR STIFF ODE */
 
-	for (i = 0; i < nke; i++) {
-		D = get_energy_ext_7d_ct(&ke_ct[dimke * i], dimke);
-		D = -1.0 * D * D;
-
-		exp_diag_smp[i] = exp(ode_step * D) - 1.0;
-	}
+	get_etd_mean(exp_diag_smp, NULL, ke_ct, nke, dimke, ode_step);
 
 	for (i = 0; i < nke; i++) {
 
 		get_zs_loop_mom_7d_ct(kl1, kl2, &ke_ct[dimke * i], dimke, q_ct, nq, dimq);
 
-		for (j = 0; j < nq; j++) {
-
-			D = get_energy_ext_7d_ct(&kl1[dimke * j], dimke);
-			D = -1.0 * D * D;
-			exp_diag_lp1[i * nq + j] = exp(ode_step * D) - 1.0;
-
-			D = get_energy_ext_7d_ct(&kl2[dimke * j], dimke);
-			D = -1.0 * D * D;
-			exp_diag_lp2[i * nq + j] = exp(ode_step * D) - 1.0;
-		}
+		get_etd_mean(&exp_diag_lp1[i * nq], NULL, kl1, nq, dimq, ode_step);
+		get_etd_mean(&exp_diag_lp2[i * nq], NULL, kl2, nq, dimq, ode_step);
 	}
 
 	for (i = 0; i < nke; i++) {
@@ -382,6 +370,31 @@ void get_diag(double *diag, const double *ke_ct, unsigned long nke, unsigned int
 		D = get_energy_ext_7d_ct(&ke_ct[dimke * i], dimke);
 		diag[i] = -1.0 * D * D;
 	}
+}
+
+void get_etd_mean(double *mn, const double *gma, const double *ke_ct, unsigned long nke,
+		  unsigned int dimke, double h)
+{
+	double *diag;
+	unsigned long i;
+
+	diag = malloc(nke * sizeof(double));
+	assert(diag);
+
+	get_diag(diag, ke_ct, nke, dimke);
+
+	if (gma) {
+
+		for (i = 0; i < nke; i++) {
+			mn[i] = gma[i] * (exp(h * diag[i]) - 1.0);
+		}
+	} else {
+		for (i = 0; i < nke; i++) {
+			mn[i] = exp(h * diag[i]) - 1.0;
+		}
+	}
+
+	free(diag);
 }
 
 static void get_rhs_exct(double *rhs_gma1, double s, double *gma0, unsigned long nke, void *param)

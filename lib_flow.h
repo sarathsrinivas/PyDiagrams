@@ -279,6 +279,8 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 		    void (*fillpot)(double *, double *, unsigned long, unsigned int, double *),
 		    double *vparam, double *work, unsigned long work_sz);
 void get_diag(double *diag, const double *ke_ct, unsigned long nke, unsigned int dimke);
+void get_etd_mean(double *mn, const double *gma, const double *ke_ct, unsigned long nke,
+		  unsigned int dimke, double h);
 void get_first_step_etd34rk(double *gma_exct, double *ke_ct, unsigned long nke, unsigned int dimke,
 			    double h, double kf, unsigned long nqr, unsigned long nth,
 			    unsigned long nphi, double (*vfun)(double *, unsigned int, double *),
