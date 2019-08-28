@@ -222,9 +222,9 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	reg_kl12 = malloc(2 * nq * sizeof(double));
 	assert(reg_kl12);
 
-	kl1 = malloc(nq * sizeof(double));
+	kl1 = malloc(nq * dimke * sizeof(double));
 	assert(kl1);
-	kl2 = malloc(nq * sizeof(double));
+	kl2 = malloc(nq * dimke * sizeof(double));
 	assert(kl2);
 
 	gma0_lp1 = malloc(nq * nke * sizeof(double));
