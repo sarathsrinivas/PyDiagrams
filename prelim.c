@@ -338,7 +338,9 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	par->reg12 = reg12;
 	par->reg1x2 = reg1x2;
 
+	par->gma_smp_mn = gma_smp_mn;
 	par->exp_diag_smp = exp_diag_smp;
+
 	par->exp_diag_lp1 = exp_diag_lp1;
 	par->exp_diag_lp2 = exp_diag_lp2;
 	par->gma1_lp_mn = gma1_lp_mn;
