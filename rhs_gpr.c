@@ -146,9 +146,6 @@ void get_rhs_block_mean(double *gma, double *var_gma, double *gma0, double *var_
 	gma1_lp_mn = par->gma1_lp_mn;
 	gma2_lp_mn = par->gma2_lp_mn;
 
-	exp_diag_lp1 = par->exp_diag_lp1;
-	exp_diag_lp2 = par->exp_diag_lp2;
-
 	lknxx_fq = malloc(nq * nq * sizeof(double));
 	assert(lknxx_fq);
 	lknxx_gma = malloc(nke * nke * sizeof(double));
@@ -165,9 +162,8 @@ void get_rhs_block_mean(double *gma, double *var_gma, double *gma0, double *var_
 
 	get_var_mat_chd(var_gma12, ktt12, ktx12, lknxx_gma, 2 * nq, nke);
 
-	get_fq_samples_reg_mean(fqe, var_fq, gma1_lp_mn, gma2_lp_mn, exp_diag_lp1, exp_diag_lp2,
-				wt_gma, A1, B1, A2, B2, C, var_gma12, reg12, reg1x2, ke_flag, nq,
-				nke);
+	get_fq_samples_reg_mean(fqe, var_fq, gma1_lp_mn, gma2_lp_mn, wt_gma, A1, B1, A2, B2, C,
+				var_gma12, reg12, reg1x2, ke_flag, nq, nke);
 
 	get_noise_covar_chd(lknxx_fq, kxx_fq, var_fq, nq);
 
@@ -242,21 +238,6 @@ void get_rhs_ph_mean(double *gma_2, double s, double *gma0_2, unsigned long n2ke
 
 	par_zs = par[0];
 	par_zsp = par[1];
-
-	/* UPDATE MEAN OF SAMPLES */
-
-	N = nke;
-	K = 0;
-	LDA = 1;
-	INCX = 1;
-	INCY = 1;
-	UPLO = 'L';
-	ALPHA = 1.0;
-	BETA = 0.0;
-
-	dsbmv_(&UPLO, &N, &K, &ALPHA, gma0_2, &LDA, par[0].exp_diag_smp, &INCX, &BETA,
-	       par[0].gma_smp_mn, &INCY);
-	dcopy_(&N, par[0].gma_smp_mn, &INCX, par[1].gma_smp_mn, &INCY);
 
 	/* GET BLOCK PREDICTION */
 

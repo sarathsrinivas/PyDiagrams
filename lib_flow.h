@@ -2,7 +2,7 @@
 struct rhs_param {
 	double *ke_ct, *q_ct, *q_sph, *pke_ct, *pq_sph, *kxx_gma, *kxx_fq, *ktt12, *ktx12, *kl12_ct,
 	    *A1, *B1, *A2, *B2, *C, *Iqe, *IIe, *fqe, *var_fq, *var_gma12, *reg12, *reg1x2,
-	    *gma_smp_mn, *exp_diag_smp, *gma1_lp_mn, *gma2_lp_mn, *exp_diag_lp1, *exp_diag_lp2;
+	    *gma_smp_mn, *gma1_lp_mn, *gma2_lp_mn;
 	double fac, kf;
 	unsigned int dimke, dimq, ke_flag;
 	unsigned long nq, nth;
@@ -225,11 +225,10 @@ void get_fq_samples_reg(double *fq_reg, double *var_fq, const double *wt_gma, co
 			double *var_gma12, const double *reg12, const double *reg1x2,
 			unsigned int ke_flag, unsigned long nq, unsigned long nke);
 void get_fq_samples_reg_mean(double *fq_reg, double *var_fq, double *gma1_mean, double *gma2_mean,
-			     const double *exp_diag1, const double *exp_diag2, const double *wt_gma,
-			     const double *A1, const double *B1, const double *A2, const double *B2,
-			     const double *C, double *var_gma12, const double *reg12,
-			     const double *reg1x2, unsigned int ke_flag, unsigned long nq,
-			     unsigned long nke);
+			     const double *wt_gma, const double *A1, const double *B1,
+			     const double *A2, const double *B2, const double *C, double *var_gma12,
+			     const double *reg12, const double *reg1x2, unsigned int ke_flag,
+			     unsigned long nq, unsigned long nke);
 void get_fq_as_samples(double *fq, double *var_fq, const double *wt_gma_zs,
 		       const double *wt_gma_zsp, const double *A1, const double *A2,
 		       const double *B1, const double *B2, const double *C, const double *A1p,
@@ -324,3 +323,26 @@ void flow_rhs(double *gma, double *var_gma, double *gma0, double *var_gma0, unsi
 	      void *param);
 void flow_rhs_ph(double *gma, double *var_gma, double *gma0, double *var_gma0, unsigned long nke,
 		 void *param);
+
+/* ETD FOR GPR */
+void get_expz_gpr(double *expz, double *J, double h, unsigned long n);
+void get_enf_gpr(double *enf, double *J, double h, unsigned long n);
+void get_etd4rk_coeff_gpr(double *alp, double *bet, double *gam, double *J, double h,
+			  unsigned long n);
+void etd4rk_vec_step_gpr(double t0, unsigned long m, double *y0, double h, double *J,
+			 double *exp_hj2, double *enf_jh2, double *alph, double *bet, double *gam,
+			 void fun(double *f, double t, double *u1, unsigned long mn, void *param),
+			 void *param, double *y, double *work, unsigned long nwork);
+void etd4rk_vec_gpr(double t0, double tn, double h, double *y0, unsigned long n, double *J,
+		    void fn(double *f, double t, double *u1, unsigned long mn, void *param),
+		    void *param);
+/* ETD34RK */
+unsigned long get_work_sz_etd34rk_gpr(unsigned long n);
+void etd34rk_vec_step_gpr(double t0, unsigned long m, double *y0, double h, double *J,
+			  double *exp_hj2, double *enf_jh2, double *enf_jh, double *alph,
+			  double *bet, double *gam,
+			  void fun(double *f, double t, double *u1, unsigned long mn, void *param),
+			  void *param, double *y, double *eg, double *work, unsigned long nwork);
+void etd34rk_vec_gpr(double t0, double tn, double h, double *y0, unsigned long n, double *J,
+		     void fn(double *f, double t, double *u1, unsigned long mn, void *param),
+		     void *param, double *eg);

@@ -231,11 +231,10 @@ void get_fq_samples_reg(double *fq_reg, double *var_fq, const double *wt_gma, co
 }
 
 void get_fq_samples_reg_mean(double *fq_reg, double *var_fq, double *gma1_mean, double *gma2_mean,
-			     const double *exp_diag1, const double *exp_diag2, const double *wt_gma,
-			     const double *A1, const double *B1, const double *A2, const double *B2,
-			     const double *C, double *var_gma12, const double *reg12,
-			     const double *reg1x2, unsigned int ke_flag, unsigned long nq,
-			     unsigned long nke)
+			     const double *wt_gma, const double *A1, const double *B1,
+			     const double *A2, const double *B2, const double *C, double *var_gma12,
+			     const double *reg12, const double *reg1x2, unsigned int ke_flag,
+			     unsigned long nq, unsigned long nke)
 {
 	double *gma1, *gma2, *gma1_reg, *gma2_reg, *fq, *var_gma12_reg;
 	int N, K, LDA, INCX, INCY;
@@ -273,8 +272,8 @@ void get_fq_samples_reg_mean(double *fq_reg, double *var_fq, double *gma1_mean, 
 
 	/* UPDATE PRIOR MEAN */
 
-	dsbmv_(&UPLO, &N, &K, &ALPHA, gma1, &LDA, exp_diag1, &INCX, &BETA, gma1_mean, &INCY);
-	dsbmv_(&UPLO, &N, &K, &ALPHA, gma2, &LDA, exp_diag2, &INCX, &BETA, gma2_mean, &INCY);
+	dcopy_(&N, gma1, &INCX, gma1_mean, &INCY);
+	dcopy_(&N, gma2, &INCX, gma2_mean, &INCY);
 
 	dsbmv_(&UPLO, &N, &K, &ALPHA, gma1, &LDA, gma2, &INCX, &BETA, fq, &INCY);
 

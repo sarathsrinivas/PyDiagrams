@@ -123,11 +123,8 @@ unsigned long get_work_sz_rhs_param(unsigned long nke, unsigned int dimke, unsig
 	sz_alloc += 4 * nq * nq; /* reg1x2 */
 
 	sz_alloc += nke;      /* gma_smp_mn */
-	sz_alloc += nke;      /* exp_diag_smp */
 	sz_alloc += nq * nke; /* gma1_lp_mn */
 	sz_alloc += nq * nke; /* gma2_lp_mn */
-	sz_alloc += nq * nke; /* exp_diag_lp1 */
-	sz_alloc += nq * nke; /* exp_diag_lp2 */
 
 	return sz_alloc;
 }
@@ -201,17 +198,10 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 
 	gma_smp_mn = &work[sz_alloc];
 	sz_alloc += nke;
-	exp_diag_smp = &work[sz_alloc];
-	sz_alloc += nke;
 
 	gma1_lp_mn = &work[sz_alloc];
 	sz_alloc += nke * nq;
 	gma2_lp_mn = &work[sz_alloc];
-	sz_alloc += nke * nq;
-
-	exp_diag_lp1 = &work[sz_alloc];
-	sz_alloc += nke * nq;
-	exp_diag_lp2 = &work[sz_alloc];
 	sz_alloc += nke * nq;
 
 	assert(sz_alloc == work_sz_chk);
@@ -279,35 +269,6 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 
 	/* GET MEAN FOR STIFF ODE */
 
-	get_etd_mean(exp_diag_smp, NULL, ke_ct, nke, dimke, ode_step);
-
-	for (i = 0; i < nke; i++) {
-
-		get_zs_loop_mom_7d_ct(kl1, kl2, &ke_ct[dimke * i], dimke, q_ct, nq, dimq);
-
-		get_etd_mean(&exp_diag_lp1[i * nq], NULL, kl1, nq, dimq, ode_step);
-		get_etd_mean(&exp_diag_lp2[i * nq], NULL, kl2, nq, dimq, ode_step);
-	}
-
-	for (i = 0; i < nke; i++) {
-		fillpot(&gma0_lp1[i * nq], kl1, nq, dimke, vparam);
-		fillpot(&gma0_lp2[i * nq], kl2, nq, dimke, vparam);
-	}
-
-	N = nq * nke;
-	K = 0;
-	LDA = 1;
-	INCX = 1;
-	INCY = 1;
-	UPLO = 'L';
-	ALPHA = 1.0;
-	BETA = 0.0;
-
-	dsbmv_(&UPLO, &N, &K, &ALPHA, gma0_lp1, &LDA, exp_diag_lp1, &INCX, &BETA, gma1_lp_mn,
-	       &INCY);
-	dsbmv_(&UPLO, &N, &K, &ALPHA, gma0_lp2, &LDA, exp_diag_lp2, &INCX, &BETA, gma2_lp_mn,
-	       &INCY);
-
 	par->ke_ct = ke_ct;
 	par->q_sph = q_sph;
 	par->q_ct = q_ct;
@@ -339,10 +300,7 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 	par->reg1x2 = reg1x2;
 
 	par->gma_smp_mn = gma_smp_mn;
-	par->exp_diag_smp = exp_diag_smp;
 
-	par->exp_diag_lp1 = exp_diag_lp1;
-	par->exp_diag_lp2 = exp_diag_lp2;
 	par->gma1_lp_mn = gma1_lp_mn;
 	par->gma2_lp_mn = gma2_lp_mn;
 
