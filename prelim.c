@@ -115,11 +115,11 @@ unsigned long get_work_sz_rhs_param(unsigned long nke, unsigned int dimke, unsig
 	sz_alloc += 2 * nq * nke;   /* ktx12 */
 	sz_alloc += 2 * nq * dimke; /* kl12_ct */
 
-	sz_alloc += nq * nke;    /* fqe */
+	sz_alloc += nq * nke;	 /* fqe */
 	sz_alloc += nq;		 /* var_fq */
 	sz_alloc += 4 * nq * nq; /* var_gma12*/
 
-	sz_alloc += nq * nke;    /* reg12 */
+	sz_alloc += nq * nke;	 /* reg12 */
 	sz_alloc += 4 * nq * nq; /* reg1x2 */
 
 	sz_alloc += nke;      /* gma_smp_mn */
@@ -579,7 +579,7 @@ unsigned long get_work_sz_rhs_diff_param(unsigned long nke, unsigned int dimke, 
 	sz_alloc += 2 * nq * dimke; /* kl12_ct */
 
 	sz_alloc += nq * nke; /* fqe */
-	sz_alloc += nq;       /* var_fq */
+	sz_alloc += nq;	      /* var_fq */
 
 	sz_alloc += 4 * nq * nq; /* var_gma12_zs */
 	sz_alloc += 4 * nq * nq; /* var_gma12_zsp */
