@@ -270,10 +270,12 @@ void get_fq_samples_reg_mean(double *fq_reg, double *var_fq, double *gma1_mean, 
 	interpolate_gma_mean(gma1, gma1_mean, wt_gma, A1, B1, C, nq, nke);
 	interpolate_gma_mean(gma2, gma2_mean, wt_gma, A2, B2, C, nq, nke);
 
-	/* UPDATE PRIOR MEAN */
+	/* UPDATE PRIOR MEAN
 
 	dcopy_(&N, gma1, &INCX, gma1_mean, &INCY);
 	dcopy_(&N, gma2, &INCX, gma2_mean, &INCY);
+
+	*/
 
 	dsbmv_(&UPLO, &N, &K, &ALPHA, gma1, &LDA, gma2, &INCX, &BETA, fq, &INCY);
 
