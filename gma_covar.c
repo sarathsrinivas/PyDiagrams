@@ -2,12 +2,14 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include <omp.h>
 #include <lib_rng/lib_rng.h>
 #include <lib_gpr/lib_gpr.h>
 #include "lib_flow.h"
 
 #define DIMKE (7)
 #define DIMQ (3)
+#define CHUNK (100)
 
 void get_zs_covar_Aeq(double *A1, double *A2, const double *ke_ct, const double *q_ct,
 		      unsigned long nke, unsigned int dimke, unsigned long nq, unsigned int dimq,
@@ -17,6 +19,10 @@ void get_zs_covar_Aeq(double *A1, double *A2, const double *ke_ct, const double 
 	    deq1, deq2, k1x, k1y, k1z, k2x, k2y, k2z, Py, X1[DIMKE], X2[DIMKE], Q[DIMKE];
 	unsigned long i, j, l;
 
+#pragma omp parallel for default(none)                                                             \
+    shared(A1, A2, ke_ct, q_ct, pke, dimke, dimq, nq, nke) private(                                \
+	i, j, l, dlz, dlpx, dlpy, dlpz, Px, Py, Pz, X1, X2, qx, qy, qz, Q, deq1, deq2)             \
+	schedule(dynamic, CHUNK)
 	for (i = 0; i < nke; i++) {
 
 		dlz = ke_ct[dimke * i + 0];
@@ -80,6 +86,8 @@ void get_zs_covar_Bes(double *B1, double *B2, const double *ke_ct, const double 
 	    X1[DIMKE], X2[DIMKE], S[DIMKE], Py;
 	unsigned long i, j, l;
 
+#pragma omp parallel for default(none) shared(B1, B2, ke_ct, ks_ct, pke, dimke, nke) private(      \
+    i, j, l, dlz, dlpx, dlpy, dlpz, Px, Py, Pz, X1, X2, S, des1, des2) schedule(dynamic, CHUNK)
 	for (i = 0; i < nke; i++) {
 
 		dlz = ke_ct[dimke * i + 0];
@@ -140,6 +148,9 @@ void get_zs_covar_Cqs(double *C, const double *ke_ct, const double *q_ct, unsign
 
 	unsigned long i, j, l;
 
+#pragma omp parallel for default(none)                                                             \
+    shared(C, ke_ct, q_ct, pke, dimke, dimq, nq, nke) private(i, j, l, qx, qy, qz, S, Q, dqs)      \
+	schedule(dynamic, CHUNK)
 	for (j = 0; j < nke; j++) {
 
 		S[0] = ke_ct[dimke * j + 0];
