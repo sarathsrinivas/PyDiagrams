@@ -228,22 +228,28 @@ void init_rhs_param(struct rhs_param *par, double *ke_ct, unsigned long nke, uns
 
 	sph_to_ct(q_ct, q_sph, dimq, nq);
 
+	fprintf(stderr, "GET COVAR\n");
 	get_krn_se_ard(kxx_gma, ke_ct, ke_ct, nke, nke, dimke, pke_ct, npke);
 	get_krn_se_ard(kxx_fq, q_sph, q_sph, nq, nq, dimq, pq_sph, npq);
 
+	fprintf(stderr, "GET SPLIT COVAR\n");
 	get_zs_covar_Aeq(A1, A2, ke_ct, q_ct, nke, dimke, nq, dimq, pke_ct, npke);
 	get_zs_covar_Bes(B1, B2, ke_ct, ke_ct, nke, dimke, pke_ct, npke);
 	get_zs_covar_Cqs(C, ke_ct, q_ct, nke, dimke, nq, dimq, pke_ct, npke);
 
+	fprintf(stderr, "GET IFQ\n");
 	get_zs_Ifq(Iqe, q_sph, nq, pq_sph, dimq, ke_ct, nke, dimke, nth, fac, kf);
 
+	fprintf(stderr, "GET IIE\n");
 	get_zs_II(IIe, ke_ct, nke, dimke, pq_sph, nth, fac, kf);
 
+	fprintf(stderr, "GET LOOP COVAR\n");
 	get_zs_loop_mom_7d_ct(kl12_ct, &kl12_ct[nq * dimke], &ke_ct[dimke * ke_flag], dimke, q_ct,
 			      nq, dimq);
 	get_krn_se_ard(ktx12, kl12_ct, ke_ct, 2 * nq, nke, dimke, pke_ct, npke);
 	get_krn_se_ard(ktt12, kl12_ct, kl12_ct, 2 * nq, 2 * nq, dimke, pke_ct, npke);
 
+	fprintf(stderr, "GET REG MAT\n");
 	get_reg_mat_loop_zs(reg1, reg2, reg_mn_max, reg_mn_eps, ke_ct, nke, dimke, q_ct, nq, dimq);
 
 	N = nq * nke;
