@@ -157,6 +157,10 @@ void get_I2q(double *I2q, const double *xq, unsigned long nq, unsigned int dim, 
 	     double *q1, unsigned long nth, double lq);
 void get_I3q(double *I3q, const double *xq, unsigned long nq, unsigned int dim, double *q0,
 	     double *q1, unsigned long nth, double lq);
+void get_zs_Ifq_ke(double *Ifq_ke, const double *I_phi, const double *ke_ct, unsigned int dimke,
+		   const double *xq, unsigned long nq, unsigned int dimq, unsigned long nth,
+		   double lq, double lth, double sigy2, const double *gth, const double *gwth,
+		   double kf, double fac);
 void get_zs_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l, unsigned int dimq,
 		const double *ke_ct, unsigned long nke, unsigned int dimke, unsigned long nth,
 		double fac, double kf);
