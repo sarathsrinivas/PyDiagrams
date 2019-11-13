@@ -238,13 +238,16 @@ void get_zs_Ifq(double *Ifq, const double *xq, unsigned long nq, const double *l
 			   * (Erf((2.0 * PI - phi_qi) / lphi) - Erf((0 - phi_qi) / lphi));
 	}
 
+#pragma omp parallel
+	{
 #pragma omp parallel for default(none) shared(Ifq, nke, nq, I_phi, ke_ct, dimke, xq, dimq, nth,    \
 					      lq, lth, sigy2, gth, gwth, kf, fac) private(i)       \
     schedule(dynamic, CHUNK)
-	for (i = 0; i < nke; i++) {
+		for (i = 0; i < nke; i++) {
 
-		get_zs_Ifq_ke(&Ifq[nq * i], I_phi, &ke_ct[dimke * i], dimke, xq, nq, dimq, nth, lq,
-			      lth, sigy2, gth, gwth, kf, fac);
+			get_zs_Ifq_ke(&Ifq[nq * i], I_phi, &ke_ct[dimke * i], dimke, xq, nq, dimq,
+				      nth, lq, lth, sigy2, gth, gwth, kf, fac);
+		}
 	}
 
 	free(I_phi);
