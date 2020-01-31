@@ -5,6 +5,7 @@
 #include "split_covar.h"
 #include "momentum_sample.h"
 #include "loop_vtx.h"
+#include "vtx_interpol.h"
 
 static int verify(double terr, double tol)
 {
@@ -33,4 +34,7 @@ void test_lib_flow(void)
 	verify(test_zs_split_covar(nke, nq, -1, 5554), 1E-7);
 	verify(test_zsp_split_covar(nke, nq, 1, 54), 1E-7);
 	verify(test_zsp_split_covar(nke, nq, -1, 54), 1E-7);
+
+	verify(test_interpolate_gma(10, nq, 1, 435), 1E-7);
+	verify(test_interpolate_gma(10, nq, -1, 545), 1E-7);
 }
