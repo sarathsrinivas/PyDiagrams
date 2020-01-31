@@ -15,8 +15,9 @@ double test_zs_split_covar(unsigned long nke, unsigned long nq, int shft, int se
 {
 	double *kl1, *kl2, *kl1_ct, *kl2_ct, *q_ct, *ke, *ke_ct, *q, *A1, *A2, *B1, *B2, *C, kmax,
 	    st[3], en[3], pke[DIMKE + 1], *kls1, *kls2, *kls1_spl, *kls2_spl, err, Px, Py, Pz, dlpx,
-	    dlpy, dlpz, dlz, qx, qy, qz, Psx, Psy, Psz, dlpsx, dlpsy, dlpsz, dlsz, k1x, k1y, k1z;
-	unsigned long np, i, j, s, e, l;
+	    dlpy, dlpz, dlz, qx, qy, qz, Psx, Psy, Psz, dlpsx, dlpsy, dlpsz, dlsz, k1x, k1y, k1z,
+	    *work;
+	unsigned long np, i, j, s, e, l, nwrk;
 	unsigned int dimke, dimq;
 	struct split_covar *scv;
 	dsfmt_t drng;
@@ -53,16 +54,12 @@ double test_zs_split_covar(unsigned long nke, unsigned long nq, int shft, int se
 	kls2_spl = malloc(nke * nke * nq * sizeof(double));
 	assert(kls2_spl);
 
-	scv->A1 = malloc(nke * nq * sizeof(double));
-	assert(scv->A1);
-	scv->A2 = malloc(nke * nq * sizeof(double));
-	assert(scv->A2);
-	scv->B1 = malloc(nke * nke * sizeof(double));
-	assert(scv->B1);
-	scv->B2 = malloc(nke * nke * sizeof(double));
-	assert(scv->B2);
-	scv->C = malloc(nke * nq * sizeof(double));
-	assert(scv->C);
+	nwrk = get_size_split_covar(nke, nq);
+
+	work = malloc(nwrk * sizeof(double));
+	assert(work);
+
+	allocate_mem_split_covar(scv, work, nwrk, nke, nq);
 
 	kmax = 2.0;
 
@@ -117,11 +114,7 @@ double test_zs_split_covar(unsigned long nke, unsigned long nq, int shft, int se
 		err += fabs(kls2[i] - kls2_spl[i]);
 	}
 
-	free(scv->C);
-	free(scv->B2);
-	free(scv->B1);
-	free(scv->A2);
-	free(scv->A1);
+	free(work);
 	free(kls2_spl);
 	free(kls1_spl);
 	free(kls2);

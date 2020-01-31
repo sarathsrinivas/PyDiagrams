@@ -12,6 +12,9 @@ struct split_covar {
 
 /* FUNCTION TO COMPUTE ALL SPLIT COVAR IN SPLIT_COVAR STRUCTURE. */
 
+unsigned long get_size_split_covar(unsigned long nke, unsigned long nq);
+void allocate_mem_split_covar(struct split_covar *scv, double *work, unsigned long nwrk,
+			      unsigned long nke, unsigned long nq);
 void get_ph_split_covar(struct split_covar *scv, const double *ke_ct, unsigned long nke,
 			unsigned int dimke, const double *q_ct, unsigned long nq, unsigned int dimq,
 			const double *pke, unsigned long npke, int shft);

@@ -200,6 +200,45 @@ static void get_ph_covar_C(double *C, const double *ke_ct, unsigned long nke, un
 	}
 }
 
+unsigned long get_size_split_covar(unsigned long nke, unsigned long nq)
+{
+	unsigned sz = 0;
+
+	sz += nke * nq; /* A1 */
+	sz += nke * nq; /* A1 */
+
+	sz += nke * nke; /* B1 */
+	sz += nke * nke; /* B1 */
+
+	sz += nke * nq; /* C */
+
+	return sz;
+}
+
+void allocate_mem_split_covar(struct split_covar *scv, double *work, unsigned long nwrk,
+			      unsigned long nke, unsigned long nq)
+{
+	unsigned long sz = 0;
+
+	assert(nwrk == get_size_split_covar(nke, nq));
+
+	scv->A1 = &work[0];
+	sz += nke * nq;
+
+	scv->A2 = &work[sz];
+	sz += nke * nq;
+
+	scv->B1 = &work[sz];
+	sz += nke * nke;
+	scv->B2 = &work[sz];
+	sz += nke * nke;
+
+	scv->C = &work[sz];
+	sz += nq * nke;
+
+	assert(sz == nwrk);
+}
+
 void get_ph_split_covar(struct split_covar *scv, const double *ke_ct, unsigned long nke,
 			unsigned int dimke, const double *q_ct, unsigned long nq, unsigned int dimq,
 			const double *pke, unsigned long npke, int shft)
