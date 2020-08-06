@@ -50,10 +50,9 @@ class GPR_EX_CART(object):
         dlp = k_2b[:, 1:4].square().sum(1).sqrt_()
         P = k_2b[:, 4:].square().sum(1).sqrt_()
 
-        dl_dlp = dlz.mul(dlpz).div_(dl).div_(dlp).acos_()
-        P_dl = dlz.mul(Pz).div_(dl).div_(P).acos_()
-        P_dlp = dlpx.mul(Px).add_(dlpy.mul(Py)).add_(
-            dlpz.mul(Pz)).div_(dlp).div_(P).acos_()
+        dl_dlp = dlz.mul(dlpz)
+        P_dl = dlz.mul(Pz)
+        P_dlp = dlpx.mul(Px).add_(dlpy.mul(Py)).add_(dlpz.mul(Pz))
 
         return dl, dlp, P, dl_dlp, P_dl, P_dlp
 
@@ -83,14 +82,14 @@ class GPR_EX_CART(object):
 
         qx, qy, qz = quad.sph_to_cart(q, th_q, phi_q)
 
-        tmp = tc.zeros_like(self.k_1b)
-        dlz = tc.zeros(self.k_2b.shape[0], qx.shape[0])
-        dlpx = (tmp - qx).mul_(0.5)
-        dlpy = (tmp - qy).mul_(0.5)
-        dlpz = (k_1b - qz).mul_(0.5)
-        Px = (tmp + qx).mul_(0.5)
-        Py = (tmp + qy).mul_(0.5)
-        Pz = (k_1b + qz).mul_(0.5)
+        tmp = tc.zeros_like(k_1b)
+        dlz = tc.zeros(k_1b.shape[0], qx.shape[0])
+        dlpx = (tmp[:, None] - qx[None, :]).mul_(0.5)
+        dlpy = (tmp[:, None] - qy[None, :]).mul_(0.5)
+        dlpz = (k_1b[:, None] - qz[None, :]).mul_(0.5)
+        Px = (tmp[:, None] + qx[None, :]).mul_(0.5)
+        Py = (tmp[:, None] + qy[None, :]).mul_(0.5)
+        Pz = (k_1b[:, None] + qz[None, :]).mul_(0.5)
 
         kq_2b = tc.stack((dlz, dlpx, dlpy, dlpz, Px, Py, Pz), -1)
 
