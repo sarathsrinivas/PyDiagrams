@@ -22,26 +22,29 @@ class HAMILTONIAN(object):
             self.op_1b_args = op_1b_args
 
             self.F = self.op_1b(basis.k_1b, **self.op_1b_args)
-            self.V = self.pot.eval(*basis.invars)
+            self.V = self.pot.eval(basis.invars)
 
     def normal_order(self, kf):
 
-        loop_2b, wt_2b = self.basis.loop_normal_order_1b(self.basis.k_1b, kf)
+        kq_2b, wt_2b = self.basis.loop_normal_order_1b(self.basis.k_1b, kf)
+
+        invar_mom = self.basis.invariants(kq_2b)
 
         n = wt_2b.shape[0]
 
         f = self.op_1b(self.basis.k_1b, **self.op_1b_args)
-        v = self.pot.eval(*loop_2b)
+        v = self.pot.eval(invar_mom)
 
         self.F = f.add_(v.mul_(wt_2b).sum(-1))
 
-        loop_1b, wt_1b, loop_2b, wt_2b = self.basis.loop_normal_order_0b(kf)
+        kq_1b, wt_1b, kq_2b, wt_2b = self.basis.loop_normal_order_0b(kf)
 
-        f = self.op_1b(loop_1b, **self.op_1b_args)
-        v = self.pot.eval(*loop_2b)
+        invar_mom = self.basis.invariants(kq_2b)
 
-        v_fold = oen.contract('i,j,ij->', wt_2b, wt_2b,
-                              v.reshape(n, n), backend='torch')
+        f = self.op_1b(kq_1b, **self.op_1b_args)
+        v = self.pot.eval(invar_mom)
+
+        v_fold = oen.contract('i,j,ij->', wt_2b, wt_2b, v, backend='torch')
 
         self.E = tc.dot(f, wt_1b) + 0.5 * v_fold
 
@@ -90,7 +93,7 @@ class HAM_GRBCM(HAM_GPR):
         HAMILTONIAN.__init__(self, basis, pot=pot, op_1b=op_1b, **op_1b_args)
 
         self.Fg = self.op_1b(basis.k_1b_g, **self.op_1b_args)
-        self.Vg = self.pot.eval(*basis.invar_g)
+        self.Vg = self.pot.eval(basis.invar_g)
 
         super().normal_order(kf)
 
