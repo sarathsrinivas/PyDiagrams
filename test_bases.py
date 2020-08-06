@@ -24,7 +24,7 @@ def test_rotate_dlp(n, kmax, seed):
     kd = B.invariants(B.k_2b)
     ke = B.invariants(B.k_2b_ex)
 
-    kd = tc.stack((kd[0], kd[1], kd[2], kd[3], kd[4], kd[5]))
-    ke = tc.stack((ke[1], ke[0], ke[2], ke[3], ke[5], ke[4]))
+    kd = tc.stack((kd[:, 0], kd[:, 1], kd[:, 2], kd[:, 3], kd[:, 4], kd[:, 5]))
+    ke = tc.stack((ke[:, 1], ke[:, 0], ke[:, 2], ke[:, 3], ke[:, 5], ke[:, 4]))
 
     assert tc.allclose(kd, ke)
