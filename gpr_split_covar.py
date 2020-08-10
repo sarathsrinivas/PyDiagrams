@@ -30,7 +30,7 @@ class GPR(gp.GPR):
 
         Aeq.mul_(-1.0).exp_()
         Bes.mul_(-1.0).exp_()
-        Csq.mul_(-1.0).exp_().mul_(sig)
+        Csq.mul_(-1.0).exp_().mul_(sig**2)
 
         self.A = Aeq
         self.B = Bes
