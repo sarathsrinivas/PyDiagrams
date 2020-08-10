@@ -1,5 +1,6 @@
 import lib_gpr.gpr as gp
 import torch as tc
+import opt_einsum as oen
 import sys
 sys.path.append('..')
 
@@ -44,7 +45,7 @@ class GPR(gp.GPR):
             self.get_split_covars(xe, xq)
             self.need_upd = False
 
-        ys = oen.contract('s,eq,es,sq->eq', wt, self.A,
+        ys = oen.contract('s,eq,es,sq->eq', self.wt, self.A,
                           self.B, self.C, backend='torch')
 
         covars = NotImplemented
