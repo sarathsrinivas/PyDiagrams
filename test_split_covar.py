@@ -5,13 +5,14 @@ import torch as tc
 import pytest as pyt
 import opt_einsum as oen
 from itertools import product
-from .gpr_split_covar import GPR, GRBCM
+from .gpr_split_covar import GPR
+from .grbcm_split_covar import GRBCM
 import sys
 sys.path.append('..')
 
 tc.set_default_tensor_type(tc.DoubleTensor)
 
-ns = (5, 10, 100)
+ns = (10, 50, 100)
 nq = (4, 9, 50)
 dim = (3, 7)
 cov = (cv.sq_exp, cv.sq_exp_noise)
@@ -54,13 +55,36 @@ def test_interpolate_gpr(ns, nq, dim, cov):
 
     GP = gp.GPR(xs, y, cov)
 
-    yeq, var_eq = GP.interpolate(xeq.view(-1, dim))
+    yeq = GP.interpolate(xeq.view(-1, dim), skip_var=True)
 
     GP_split = GPR(xs, y, cov)
 
     yeq_split, var_eq_split = GP_split.interpolate(xe, xq)
 
     assert tc.allclose(yeq, yeq_split.view(-1))
+
+
+@pyt.mark.parametrize("ns,nq,dim,cov", tparam)
+def test_pred_covar_gpr(ns, nq, dim, cov):
+    x = tc.rand(dim)
+    xs = tc.rand(ns, dim)
+    xq = tc.rand(nq, dim)
+
+    y = tc.exp(xs.sum(-1))
+
+    xe = tc.empty(ns, dim).copy_(x)
+
+    xxq = xq[:, :].add(x[None, :])
+
+    GP = gp.GPR(xs, y, cov)
+
+    yeq, var_eq = GP.interpolate(xxq)
+
+    GP_split = GPR(xs, y, cov)
+
+    yeq_split, var_eq_split = GP_split.interpolate(xe, xq)
+
+    assert tc.allclose(var_eq_split, var_eq)
 
 
 ng = (10,)
@@ -73,7 +97,7 @@ cov = (cv.sq_exp, cv.sq_exp_noise)
 tparam = list(product(ng, nc, ns, nq, dim, cov))
 
 
-@pyt.mark.parametrize("ng,nc,ns,nq,dim,cov", tparam)
+@ pyt.mark.parametrize("ng,nc,ns,nq,dim,cov", tparam)
 def test_split_covars_grbcm(ng, nc, ns, nq, dim, cov):
     xl = tc.rand(nc, ns, dim)
     xq = tc.rand(nq, dim)
