@@ -1,10 +1,11 @@
 import lib_gpr.gpr as gp
+import lib_gpr.gr_bcm as grbcm
 import lib_gpr.covar as cv
 import torch as tc
 import pytest as pyt
 import opt_einsum as oen
 from itertools import product
-from .gpr_split_covar import GPR
+from .gpr_split_covar import GPR, GRBCM
 import sys
 sys.path.append('..')
 
@@ -19,7 +20,7 @@ tparam = list(product(ns, nq, dim, cov))
 
 
 @pyt.mark.parametrize("ns,nq,dim,cov", tparam)
-def test_split_covars(ns, nq, dim, cov):
+def test_split_covars_gpr(ns, nq, dim, cov):
     xs = tc.rand(ns, dim)
     xq = tc.rand(nq, dim)
     xe = tc.rand(ns, dim)
@@ -42,7 +43,7 @@ def test_split_covars(ns, nq, dim, cov):
 
 
 @pyt.mark.parametrize("ns,nq,dim,cov", tparam)
-def test_interpolate(ns, nq, dim, cov):
+def test_interpolate_gpr(ns, nq, dim, cov):
     xs = tc.rand(ns, dim)
     xq = tc.rand(nq, dim)
     xe = tc.rand(ns, dim)
@@ -60,3 +61,38 @@ def test_interpolate(ns, nq, dim, cov):
     yeq_split, var_eq_split = GP_split.interpolate(xe, xq)
 
     assert tc.allclose(yeq, yeq_split.view(-1))
+
+
+ng = (10,)
+nc = (3, 5)
+ns = (5, 10, 20)
+nq = (4, 9, 50)
+dim = (3, 7)
+cov = (cv.sq_exp, cv.sq_exp_noise)
+
+tparam = list(product(ng, nc, ns, nq, dim, cov))
+
+
+@pyt.mark.parametrize("ng,nc,ns,nq,dim,cov", tparam)
+def test_split_covars_grbcm(ng, nc, ns, nq, dim, cov):
+    xl = tc.rand(nc, ns, dim)
+    xq = tc.rand(nq, dim)
+    xe = tc.rand(nc, ns, dim)
+    xg = tc.rand(ng, dim)
+
+    yl = tc.exp(xl.sum(-1))
+    yg = tc.exp(xg.sum(-1))
+
+    GP = GRBCM(xl, yl, xg, yg, cov)
+
+    GP.get_split_covars_local(xe, xq)
+
+    krn_split = oen.contract('ceq,ces,csq->ceqs', GP.Al,
+                             GP.Bl, GP.Cl, backend='torch')
+
+    xceq = xe[:, :, None, :].add(xq[None, None, :, :]).reshape(-1, dim)
+
+    hp = cov(GP.x, xs=xceq)
+    krn = cov(GP.x, xs=xceq, hp=hp).reshape_as(krn_split)
+
+    assert tc.allclose(krn, krn_split)
