@@ -1,11 +1,9 @@
-import lib_gpr.sampler as smp
 import torch as tc
-import numpy as np
 import pytest as pyt
 from itertools import product
-from .bases import *
-import sys
-sys.path.append('..')
+from .sampler import Uniform
+from .bases import Exch_Stoch_Cart, particle_exchange
+
 
 n = (100, 1000)
 seed = (1, 45)
@@ -15,16 +13,28 @@ tparams = list(product(n, kmax, seed))
 
 
 @pyt.mark.parametrize("n,kmax,seed", tparams)
-def test_rotate_dlp(n, kmax, seed):
+def test_invar(n: int, kmax: float, seed: int) -> None:
+    uni = Uniform(seed)
+    A = Exch_Stoch_Cart()
+    A.sample(10, n, kmax, uni)
 
-    sampler = smp.UNIFORM(seed)
+    invar = A.get_invariants()
 
-    B = GPR_EX_CART(20, n, kmax, sampler)
+    B = Exch_Stoch_Cart()
 
-    kd = B.invariants(B.k_2b)
-    ke = B.invariants(B.k_2b_ex)
+    B.from_invariants(invar)
 
-    kd = tc.stack((kd[:, 0], kd[:, 1], kd[:, 2], kd[:, 3], kd[:, 4], kd[:, 5]))
-    ke = tc.stack((ke[:, 1], ke[:, 0], ke[:, 2], ke[:, 3], ke[:, 5], ke[:, 4]))
+    assert tc.allclose(invar, B.get_invariants())
 
-    assert tc.allclose(kd, ke)
+
+@pyt.mark.parametrize("n,kmax,seed", tparams)
+def test_particle_exchange(n: int, kmax: float, seed: int) -> None:
+    uni = Uniform(seed)
+    A = Exch_Stoch_Cart()
+    A.sample(10, n, kmax, uni)
+
+    B = particle_exchange(A)
+
+    C = particle_exchange(B)
+
+    assert tc.allclose(A.get_invariants(), C.get_invariants())

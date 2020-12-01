@@ -1,137 +1,140 @@
-import lib_quadrature.ball as quad
 import torch as tc
+from torch import Tensor
+from .sampler import Sampler
 import numpy as np
-import opt_einsum as oen
-import sys
-sys.path.append('..')
 
 tc.set_default_tensor_type(tc.DoubleTensor)
 
 
-class GPR_EX_CART(object):
-    "Stochastic Basis with exchange parametrization."
+class Basis:
+    """
+     Base class for Hamiltonian basis
+    """
 
-    def __init__(self, n_1b, n_2b, kmax, sampler):
+    def __init__(self):
+        self.dim: int = NotImplemented
+        self.dim_1b: int = NotImplemented
+        self.dim_2b: int = NotImplemented
 
-        self.dim_1b = 1
-        self.dim_2b = 7
-        self.dim_invar = 6
+        self.k_1b: Tensor = NotImplemented
+        self.k_2b: Tensor = NotImplemented
 
-        self.sampler = sampler
-        self.k_1b = self.sampler.sample(n_1b, tc.tensor([0.0]),
-                                        tc.tensor([1.0]))
-        self.k_1b.squeeze_()
+    def get_invariants(self) -> Tensor:
+        raise NotImplementedError
 
-        self.kmax = kmax
+    def from_invariants(self, inv: Tensor) -> None:
+        raise NotImplementedError
 
-        self.nq = 20
-        self.nleb = 15
 
-        mins = tc.full([self.dim_2b], -kmax)
-        mins[0] = 0.0
-        maxs = tc.full([self.dim_2b], kmax)
+def time_reversal(base: Basis) -> Basis:
+    pass
 
-        self.k_2b = self.sampler.sample(n_2b, mins, maxs)
 
-        self.invars = self.invariants(self.k_2b)
+def parity_reversal(base: Basis) -> Basis:
+    pass
 
-        self.k_2b_ex = self.rotate_to_dlp(self.k_2b)
 
-    def invariants(self, k_2b):
+def particle_exchange(base: Basis) -> Basis:
+    invar = base.get_invariants()
 
-        k_2b_l = k_2b.view(-1, self.dim_2b)
+    dl, dlp, P, dl_dlp, dl_P, dlp_P = tc.split(invar, 1, dim=-1)
 
-        dlz = k_2b_l[:, 0]
-        dlpx = k_2b_l[:, 1]
-        dlpy = k_2b_l[:, 2]
-        dlpz = k_2b_l[:, 3]
-        Px = k_2b_l[:, 4]
-        Py = k_2b_l[:, 5]
-        Pz = k_2b_l[:, 6]
+    invar_ex = tc.cat([dlp, dl, P, dl_dlp, dlp_P, dl_P], dim=-1)
 
-        dl = dlz
-        dlp = k_2b_l[:, 1:4].square().sum(1).sqrt_()
-        P = k_2b_l[:, 4:].square().sum(1).sqrt_()
+    base_ex = base.__class__()
+    base_ex.from_invariants(invar_ex)
 
-        dl_dlp = dlz.mul(dlpz)
-        P_dl = dlz.mul(Pz)
-        P_dlp = dlpx.mul(Px).add_(dlpy.mul(Py)).add_(dlpz.mul(Pz))
+    return base_ex
 
-        invar_mom = tc.stack((dl, dlp, P, dl_dlp, P_dl, P_dlp), dim=-1)
 
-        return invar_mom.view(*k_2b.shape[:-1], self.dim_invar)
+class Exch_Stoch_Cart(Basis):
+    """
+     Exchage transfer basis (dl, dlp, P)
+    """
 
-    def rotate_to_dlp(self, k_2b, phi_P=0.4):
+    def __init__(self) -> None:
+        super().__init__()
+        self.k_2b_dlp: Tensor = NotImplemented
+        self.k_2b_P: Tensor = NotImplemented
+        return None
 
-        invar_mom = self.invariants(k_2b)
-        invar_mom_l = invar_mom.view(-1, self.dim_invar)
+    def sample(
+        self, n_1b: int, n_2b: int, kmax: float, sampler: Sampler
+    ) -> None:
+        self.k_1b = sampler.sample(n_1b, [0], [kmax])
 
-        dl = invar_mom_l[:, 0]
-        dlp = invar_mom_l[:, 1]
-        P = invar_mom_l[:, 2]
-        dl_dlp = invar_mom_l[:, 3]
-        P_dl = invar_mom_l[:, 4]
-        P_dlp = invar_mom_l[:, 5]
+        mins = [0.0, -kmax, -kmax, -kmax, -kmax, -kmax, -kmax]
+        maxs = [kmax, kmax, kmax, kmax, kmax, kmax, kmax]
 
-        dl_dlp_ang = dl_dlp.div(dl).div(dlp).acos_()
-        P_dl_ang = P_dl.div(P).div(dl).acos_()
-        P_dlp_ang = P_dlp.div(P).div(dlp).acos_()
+        self.k_2b = sampler.sample(n_2b, mins, maxs)
 
-        phi_dl = tc.acos((tc.cos(P_dl_ang) - tc.cos(P_dlp_ang) * tc.cos(dl_dlp_ang)) /
-                         (tc.sin(P_dlp_ang) * tc.sin(dl_dlp_ang))) + phi_P
+    def get_invariants(self) -> Tensor:
+        k_2b = self.k_2b
 
-        k_2b_dlp = tc.empty(dl.shape[0], self.dim_2b)
+        dlz = k_2b[:, 0]
+        dlp = k_2b[:, 1:4]
+        P = k_2b[:, 4:]
+        dl = tc.zeros_like(dlp)
+        dl[:, 2] = dlz
 
-        k_2b_dlp[:, 0] = dlp
-        k_2b_dlp[:, 1] = dl.mul(phi_dl.cos()).mul_(dl_dlp_ang.sin())
-        k_2b_dlp[:, 2] = dl.mul(phi_dl.sin()).mul_(dl_dlp_ang.sin())
-        k_2b_dlp[:, 3] = dl.mul(dl_dlp_ang.cos())
-        k_2b_dlp[:, 4] = P.mul(np.cos(phi_P)).mul_(P_dlp_ang.sin())
-        k_2b_dlp[:, 5] = P.mul(np.sin(phi_P)).mul_(P_dlp_ang.sin())
-        k_2b_dlp[:, 6] = P.mul(P_dlp_ang.cos())
+        mod_dl = dlz
+        mod_dlp = dlp.square().sum(-1).sqrt_()
+        mod_P = P.square().sum(-1).sqrt_()
 
-        return k_2b_dlp.view(k_2b.shape)
+        dl_dlp = dl.mul(dlp).sum(-1)
+        dl_P = dl.mul(P).sum(-1)
+        dlp_P = dlp.mul(P).sum(-1)
 
-    def loop_normal_order_1b(self, k_1b, kf):
+        invar = tc.stack([mod_dl, mod_dlp, mod_P, dl_dlp, dl_P, dlp_P], dim=-1)
 
-        q, th_q, phi_q, wt = quad.ball_quad(
-            rmax=kf, nr=self.nq, nleb=self.nleb)
+        return invar
 
-        qx, qy, qz = quad.sph_to_cart(q, th_q, phi_q)
+    def from_invariants(self, invar: Tensor) -> None:
+        self.k_2b = invar_to_cart(invar)
+        return None
 
-        tmp = tc.zeros_like(k_1b)
-        dlz = tc.zeros(k_1b.shape[0], qx.shape[0])
-        dlpx = (tmp[:, None] - qx[None, :]).mul_(0.5)
-        dlpy = (tmp[:, None] - qy[None, :]).mul_(0.5)
-        dlpz = (k_1b[:, None] - qz[None, :]).mul_(0.5)
-        Px = (tmp[:, None] + qx[None, :]).mul_(0.5)
-        Py = (tmp[:, None] + qy[None, :]).mul_(0.5)
-        Pz = (k_1b[:, None] + qz[None, :]).mul_(0.5)
 
-        kq_2b = tc.stack((dlz, dlpx, dlpy, dlpz, Px, Py, Pz), -1)
+def invar_to_cart(invar: Tensor, phi: float = 0.3) -> Tensor:
+    """
+     Convert invariant (a, b, c, a.b, a.c, b.c)
+     to (az, bx, by, bz, cx, cy, cz) where atan(by/bx) = phi.
+    """
 
-        return kq_2b, wt
+    a = invar[:, 0]
+    b = invar[:, 1]
+    c = invar[:, 2]
 
-    def loop_normal_order_0b(self, kf):
+    ab = invar[:, 3]
+    ac = invar[:, 4]
+    bc = invar[:, 5]
 
-        q, th_q, phi_q, wt_2b = quad.ball_quad(
-            rmax=kf, nr=self.nq, nleb=self.nleb)
+    ab_ang = ab.div(a).div_(b).acos_()
+    ac_ang = ac.div(a).div_(c).acos_()
+    bc_ang = bc.div(b).div_(c).acos_()
 
-        qx, qy, qz = quad.sph_to_cart(q, th_q, phi_q)
+    az = a
+    bx = b.mul(np.cos(phi)).mul_(ab_ang.sin())
+    by = b.mul(np.sin(phi)).mul_(ab_ang.sin())
+    bz = b.mul(ab_ang.cos())
 
-        n = wt_2b.shape[0]
-        dlz = tc.zeros(n, n)
+    phi_c = (
+        tc.acos(
+            (tc.cos(bc_ang) - tc.cos(ab_ang) * tc.cos(ac_ang))
+            / (tc.sin(ab_ang) * tc.sin(ac_ang))
+        )
+        + phi
+    )
 
-        dlpx = (qx[:, None] - qx[None, :]).mul_(0.5)
-        dlpy = (qy[:, None] - qy[None, :]).mul_(0.5)
-        dlpz = (qz[:, None] - qz[None, :]).mul_(0.5)
+    # phi_c = (
+    #    bc_ang.cos()
+    #    .sub_(ab_ang.cos().mul_(ac_ang.cos()))
+    #    .div_(ab_ang.sin().mul_(ac_ang.sin()))
+    # )
 
-        Px = (qx[:, None] + qx[None, :]).mul_(0.5)
-        Py = (qy[:, None] + qy[None, :]).mul_(0.5)
-        Pz = (qz[:, None] + qz[None, :]).mul_(0.5)
+    cx = c.mul(phi_c.cos()).mul_(ac_ang.sin())
+    cy = c.mul(phi_c.sin()).mul_(ac_ang.sin())
+    cz = c.mul(ac_ang.cos())
 
-        kq_2b = tc.stack((dlz, dlpx, dlpy, dlpz, Px, Py, Pz), -1)
+    k_2b = tc.stack([az, bx, by, bz, cx, cy, cz], dim=-1)
 
-        kq_1b, wt_1b = quad.gauss_legendre(self.nq, a=0, b=kf)
-
-        return kq_1b, wt_1b, kq_2b, wt_2b
+    return k_2b
