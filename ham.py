@@ -1,103 +1,60 @@
-import lib_gpr as gp
 import torch as tc
-import numpy as np
-import opt_einsum as oen
-import sys
-sys.path.append('..')
+from .bases import Basis
+from torch import Tensor
+from typing import Callable
+
 
 tc.set_default_tensor_type(tc.DoubleTensor)
 
-
-class HAMILTONIAN(object):
-    def __init__(self, basis, pot=None, op_1b=None, **op_1b_args):
-
-        self.basis = basis
-        self.pot = pot
-        self.E = 0
-        if op_1b is None:
-            self.F = None
-            self.V = None
-        else:
-            self.op_1b = op_1b
-            self.op_1b_args = op_1b_args
-
-            self.F = self.op_1b(basis.k_1b, **self.op_1b_args)
-            self.V = self.pot.eval(basis.invars)
-
-    def normal_order(self, kf):
-
-        kq_2b, wt_2b = self.basis.loop_normal_order_1b(self.basis.k_1b, kf)
-
-        invar_mom = self.basis.invariants(kq_2b)
-
-        n = wt_2b.shape[0]
-
-        f = self.op_1b(self.basis.k_1b, **self.op_1b_args)
-        v = self.pot.eval(invar_mom)
-
-        self.F = f.add_(v.mul_(wt_2b).sum(-1))
-
-        kq_1b, wt_1b, kq_2b, wt_2b = self.basis.loop_normal_order_0b(kf)
-
-        invar_mom = self.basis.invariants(kq_2b)
-
-        f = self.op_1b(kq_1b, **self.op_1b_args)
-        v = self.pot.eval(invar_mom)
-
-        v_fold = oen.contract('i,j,ij->', wt_2b, wt_2b, v, backend='torch')
-
-        self.E = tc.dot(f, wt_1b) + 0.5 * v_fold
+POT_2B = Callable[..., Tensor]
+POT_1B = Callable[..., Tensor]
 
 
-class HAM_GPR(HAMILTONIAN):
-    def __init__(self,
-                 basis,
-                 kf,
-                 pot,
-                 cov=None,
-                 cov_args=None,
-                 op_1b=None,
-                 op_1b_args=None):
+class Hamiltonian:
+    """
+     Base class for Hamiltonians
+    """
 
-        super().__init__(basis, pot=pot, op_1b=op_1b, **op_1b_args)
+    def __init__(self) -> None:
+        self.E: float = NotImplemented
+        self.F: Tensor = NotImplemented
+        self.V: Tensor = NotImplemented
+        return None
 
-        super().normal_order(kf)
+    def eval(self, base: Basis) -> None:
+        self.E = self.get_E(base)
+        self.F = self.get_F(base)
+        self.V = self.get_V(base)
+        return None
 
-        self.F_gp = gp.gpr.GPR(self.basis.k_1b, self.F, cov, **cov_args)
-        self.V_gp = gp.gpr.GPR(self.basis.k_2b, self.V, cov, **cov_args)
+    def get_E(self, base: Basis) -> float:
+        raise NotImplementedError
 
-    def train(self, method='CG', jac=True):
-        res_F = self.F_gp.train(method=method, jac=jac)
-        res_V = self.V_gp.train(method=method, jac=jac)
+    def get_F(self, base: Basis) -> Tensor:
+        raise NotImplementedError
 
-        return res_F, res_V
-
-    def interpolate(self, basis):
-        H_pred = HAMILTONIAN(basis)
-        H_pred.F, H_pred.var_F = self.F_gp.interpolate(basis.k_1b)
-        H_pred.V, H_pred.var_V = self.V_gp.interpolate(basis.k_2b)
-
-        return H_pred
+    def get_V(self, base: Basis) -> Tensor:
+        raise NotImplementedError
 
 
-class HAM_GRBCM(HAM_GPR):
-    def __init__(self,
-                 basis,
-                 kf,
-                 pot,
-                 cov=None,
-                 cov_args=None,
-                 op_1b=None,
-                 op_1b_args=None):
+class Free_Space(Hamiltonian):
+    """
+     Free space Hamiltonian from single particle
+     and two particle interaction potentials.
+    """
 
-        HAMILTONIAN.__init__(self, basis, pot=pot, op_1b=op_1b, **op_1b_args)
+    def __init__(self, pot_1b: POT_1B, pot_2b: POT_2B) -> None:
+        super().__init__()
+        self.pot_1b = pot_1b
+        self.pot_2b = pot_2b
+        return None
 
-        self.Fg = self.op_1b(basis.k_1b_g, **self.op_1b_args)
-        self.Vg = self.pot.eval(basis.invar_g)
+    def get_E(self, base: Basis) -> float:
+        return 0
 
-        super().normal_order(kf)
+    def get_F(self, base: Basis) -> Tensor:
+        return self.pot_1b(base.k_1b)
 
-        self.F_gp = gp.gr_bcm.GRBCM(self.basis.k_1b, self.F, self.basis.k_1b_g,
-                                    self.Fg, cov, **cov_args)
-        self.V_gp = gp.gr_bcm.GRBCM(self.basis.k_2b, self.V, self.basis.k_2b_g,
-                                    self.Vg, cov, **cov_args)
+    def get_V(self, base: Basis) -> Tensor:
+        invar = base.get_invariants()
+        return self.pot_2b(invar)
