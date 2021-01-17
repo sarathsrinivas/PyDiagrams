@@ -19,7 +19,7 @@ class Basis:
         self.k_1b: Tensor = NotImplemented
         self.k_2b: Tensor = NotImplemented
 
-    def get_invariants(self) -> Tensor:
+    def get_invariants(self, k: Tensor = None) -> Tensor:
         raise NotImplementedError
 
     def from_invariants(self, inv: Tensor) -> None:
@@ -68,8 +68,8 @@ class Exch_Stoch_Cart(Basis):
 
         self.k_2b = sampler.sample(n_2b, mins, maxs)
 
-    def get_invariants(self) -> Tensor:
-        k_2b = self.k_2b
+    def get_invariants(self, k: Tensor = None) -> Tensor:
+        k_2b = self.k_2b if k is None else k
 
         dlz = k_2b[:, 0]
         dlp = k_2b[:, 1:4]
