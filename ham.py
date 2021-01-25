@@ -38,9 +38,9 @@ class Hamiltonian:
         raise NotImplementedError
 
     def get_1b_loop(self, kl: Tensor, q: Tensor) -> Tensor:
-        k = kl[:, None].add(q[None, :])
-        F = self.get_1b(k.view(-1))
-        return F.view(*k.shape)
+        k = kl[:, None, :].add(q[None, :, :])
+        F = self.get_1b(k.view(-1, kl.shape[-1]))
+        return F.view(k.shape[-3], k.shape[-2])
 
     def get_2b_loop(self, kl: Tensor, q: Tensor) -> Tensor:
         k = kl[:, None, :].add(q[None, :, :])
@@ -64,7 +64,8 @@ class Free_Space(Hamiltonian):
         return 0
 
     def get_1b(self, k: Tensor) -> Tensor:
-        return self.pot_1b(k)
+        kmod = k.square().sum(-1).sqrt_()
+        return self.pot_1b(kmod)
 
     def get_2b(self, k: Tensor) -> Tensor:
         invar = self.basis.get_invariants(k)
