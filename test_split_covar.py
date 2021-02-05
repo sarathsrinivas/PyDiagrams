@@ -1,48 +1,48 @@
-import lib_gpr.gpr as gp
-import lib_gpr.gr_bcm as grbcm
-import lib_gpr.covar as cv
 import torch as tc
 import pytest as pyt
-import opt_einsum as oen
 from itertools import product
-from .gpr_split_covar import GPR
-from .grbcm_split_covar import GRBCM
-import sys
-sys.path.append('..')
+from lib_gpr.covar import Squared_exponential
+from .split_covar import GPR_SPLIT_COVAR
 
 tc.set_default_tensor_type(tc.DoubleTensor)
 
 ns = (10, 50, 100)
 nq = (4, 9, 50)
 dim = (3, 7)
-cov = (cv.sq_exp, cv.sq_exp_noise)
 
-tparam = list(product(ns, nq, dim, cov))
+tparam = list(product(ns, nq, dim))
 
 
-@pyt.mark.parametrize("ns,nq,dim,cov", tparam)
-def test_split_covars_gpr(ns, nq, dim, cov):
+@pyt.mark.parametrize("ns, nq, dim", tparam)
+def test_split_covars_gpr(ns, nq, dim):
     xs = tc.rand(ns, dim)
     xq = tc.rand(nq, dim)
     xe = tc.rand(ns, dim)
 
     y = tc.exp(xs.sum(-1))
 
-    GP = GPR(xs, y, cov)
+    cov = Squared_exponential()
 
-    GP.get_split_covars(xe, xq)
+    GP = GPR_SPLIT_COVAR(xs, y, cov)
 
-    krn_split = oen.contract('eq,es,sq->eqs', GP.A,
-                             GP.B, GP.C, backend='torch')
+    hp = tc.rand_like(GP.params)
+
+    GP.set_params(hp)
+
+    Aeq, Bes, Csq = GP.get_split_covar(xe, xq)
+
+    krn_split = tc.einsum("eq,es,sq->eqs", Aeq, Bes, Csq)
 
     xeq = xe[:, None, :].add(xq[None, :, :])
 
-    hp = cov(xs, xs=xeq)
-    krn = cov(xs, xs=xeq, hp=hp)
+    krn = cov.kernel(hp, xs, xeq)
+
+    print(krn.shape)
 
     assert tc.allclose(krn, krn_split)
 
 
+"""
 @pyt.mark.parametrize("ns,nq,dim,cov", tparam)
 def test_interpolate_gpr(ns, nq, dim, cov):
     xs = tc.rand(ns, dim)
@@ -97,7 +97,7 @@ cov = (cv.sq_exp, cv.sq_exp_noise)
 tparam = list(product(ng, nc, ns, nq, dim, cov))
 
 
-@ pyt.mark.parametrize("ng,nc,ns,nq,dim,cov", tparam)
+@pyt.mark.parametrize("ng,nc,ns,nq,dim,cov", tparam)
 def test_split_covars_grbcm(ng, nc, ns, nq, dim, cov):
     xl = tc.rand(nc, ns, dim)
     xq = tc.rand(nq, dim)
@@ -111,8 +111,9 @@ def test_split_covars_grbcm(ng, nc, ns, nq, dim, cov):
 
     GP.get_split_covars_local(xe, xq)
 
-    krn_split = oen.contract('ceq,ces,csq->ceqs', GP.Al,
-                             GP.Bl, GP.Cl, backend='torch')
+    krn_split = oen.contract(
+        "ceq,ces,csq->ceqs", GP.Al, GP.Bl, GP.Cl, backend="torch"
+    )
 
     xceq = xe[:, :, None, :].add(xq[None, None, :, :]).reshape(-1, dim)
 
@@ -120,3 +121,4 @@ def test_split_covars_grbcm(ng, nc, ns, nq, dim, cov):
     krn = cov(GP.x, xs=xceq, hp=hp).reshape_as(krn_split)
 
     assert tc.allclose(krn, krn_split)
+"""
