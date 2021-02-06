@@ -42,9 +42,8 @@ def test_split_covars_gpr(ns, nq, dim):
     assert tc.allclose(krn, krn_split)
 
 
-"""
-@pyt.mark.parametrize("ns,nq,dim,cov", tparam)
-def test_interpolate_gpr(ns, nq, dim, cov):
+@pyt.mark.parametrize("ns, nq, dim", tparam)
+def test_predict_split(ns, nq, dim):
     xs = tc.rand(ns, dim)
     xq = tc.rand(nq, dim)
     xe = tc.rand(ns, dim)
@@ -53,17 +52,22 @@ def test_interpolate_gpr(ns, nq, dim, cov):
 
     xeq = xe[:, None, :].add(xq[None, :, :])
 
-    GP = gp.GPR(xs, y, cov)
+    cov = Squared_exponential()
 
-    yeq = GP.interpolate(xeq.view(-1, dim), skip_var=True)
+    GP = GPR_SPLIT_COVAR(xs, y, cov)
 
-    GP_split = GPR(xs, y, cov)
+    hp = tc.rand_like(GP.params)
 
-    yeq_split, var_eq_split = GP_split.interpolate(xe, xq)
+    GP.set_params(hp)
+
+    yeq, var_eq = GP.predict(xeq.view(-1, dim), var="NONE")
+
+    yeq_split, var_eq_split = GP.predict_split(xe, xq, var="NONE")
 
     assert tc.allclose(yeq, yeq_split.view(-1))
 
 
+"""
 @pyt.mark.parametrize("ns,nq,dim,cov", tparam)
 def test_pred_covar_gpr(ns, nq, dim, cov):
     x = tc.rand(dim)
