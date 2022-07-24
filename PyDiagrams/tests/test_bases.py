@@ -1,8 +1,7 @@
 import torch as tc
 import pytest as pyt
 from itertools import product
-from .sampler import Uniform
-from .bases import Exch_Stoch_Cart, particle_exchange
+from PyDiagrams import Uniform, Exch_Stoch_Cart, particle_exchange
 
 
 n = (100, 1000)

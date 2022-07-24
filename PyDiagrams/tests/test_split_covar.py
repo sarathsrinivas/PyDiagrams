@@ -1,8 +1,8 @@
 import torch as tc
 import pytest as pyt
 from itertools import product
-from lib_gpr.covar import Squared_exponential
-from .split_covar import GPR_SPLIT_COVAR
+from PyGPR import Squared_exponential
+from PyDiagrams import GPR_SPLIT_COVAR
 
 tc.set_default_tensor_type(tc.DoubleTensor)
 

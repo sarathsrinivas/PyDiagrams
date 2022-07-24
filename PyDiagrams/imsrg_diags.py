@@ -3,7 +3,7 @@ import numpy as np
 from torch import Tensor
 from .diag import Diagram
 from typing import List
-from lib_quadrature.integrator import Integrator
+from PyQuadrature import Integrator
 
 tc.set_default_tensor_type(tc.DoubleTensor)
 
@@ -17,7 +17,7 @@ class ZS(Diagram):
         super().__init__(integ)
         self.sgn = sgn
         self.limits = {"rmax": kf}
-        self.integ.get_quadrature(self.limits)
+        self.x, self.wt = self.integ.get_quadrature(self.limits)
         self.n_1b = 6
         self.n_2b = 2
         return None
@@ -42,7 +42,7 @@ class ZS(Diagram):
         return kl
 
     def arg_q_1b(self) -> List[Tensor]:
-        q = self.integ.x
+        q = self.x
         zr = tc.zeros_like(q)
 
         ql = [q, q, zr, zr, zr, zr]
@@ -82,7 +82,7 @@ class ZS(Diagram):
         return kl
 
     def arg_q_2b(self) -> List[Tensor]:
-        q = self.integ.x
+        q = self.x
         zr = tc.zeros(q.shape[0], 1)
 
         ql1 = tc.cat([zr, -0.5 * q, 0.5 * q], dim=-1)

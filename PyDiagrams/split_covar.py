@@ -1,7 +1,7 @@
 import torch as tc
 from typing import Sequence
 from torch import Tensor
-from lib_gpr.gpr import Exact_GP
+from PyGPR import Exact_GP
 
 
 class GPR_SPLIT_COVAR(Exact_GP):

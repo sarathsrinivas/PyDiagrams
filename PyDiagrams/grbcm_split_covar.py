@@ -1,14 +1,11 @@
-import lib_gpr.gpr as gp
-import lib_gpr.gr_bcm as gr
+import PyGPR as gp
 import torch as tc
-import opt_einsum as oen
-import sys
-sys.path.append('..')
+#import opt_einsum as oen
 
 tc.set_default_tensor_type(tc.DoubleTensor)
 
 
-class GRBCM(gr.GRBCM):
+class GRBCM(gp.GRBCM):
     def __init__(self, xl, yl, xg, yg, cov, hp=None, **kargs):
         super().__init__(xl, yl, xg, yg, cov, hp=None, **kargs)
 

@@ -1,7 +1,7 @@
 from torch import Tensor
 from typing import List
 from .ham import Hamiltonian
-from lib_quadrature.integrator import Integrator
+from PyQuadrature import Integrator
 
 
 class Diagram:
@@ -11,6 +11,8 @@ class Diagram:
 
     def __init__(self, integ: Integrator) -> None:
         self.integ: Integrator = integ
+        self.x = NotImplemented
+        self.wt = NotImplemented
         self.FL: List[Tensor] = NotImplemented
         self.VL: List[Tensor] = NotImplemented
         self.DL: Tensor = NotImplemented
@@ -54,4 +56,4 @@ class Diagram:
     def eval(self, ke: Tensor, H: Hamiltonian) -> Tensor:
         self.get_loop_vtx(ke, H)
         Ikq = self.get_integrand()
-        return self.integ.integrate(Ikq)
+        return self.integ.integrate(Ikq, self.wt)

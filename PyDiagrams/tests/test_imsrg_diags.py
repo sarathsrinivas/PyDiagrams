@@ -1,10 +1,7 @@
 import torch as tc
 import numpy as np
-from lib_quadrature.integrator import Ball_lebedev_gauss_cart
-from .bases import Exch_Stoch_Cart
-from .ham import Free_Space
-from .imsrg_diags import ZS
-from .sampler import Uniform
+from PyQuadrature import Ball_lebedev_gauss_cart
+from PyDiagrams import Exch_Stoch_Cart, Free_Space, ZS, Uniform
 from itertools import product
 import pytest as pyt
 
